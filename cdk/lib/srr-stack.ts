@@ -47,19 +47,19 @@ export class SsrStack extends cdk.Stack {
       handler: "index.handler"
     });
 
-    const ssrEdgeFunction = new lambda.Function(this, "ssrEdgeHandler", {
-      runtime: lambda.Runtime.NODEJS_12_X,
-      code: lambda.Code.fromAsset("../simple-ssr/edge-build"),
-      memorySize: 128,
-      timeout: Duration.seconds(5),
-      handler: "index.handler"
-    });
+    // const ssrEdgeFunction = new lambda.Function(this, "ssrEdgeHandler", {
+    //   runtime: lambda.Runtime.NODEJS_12_X,
+    //   code: lambda.Code.fromAsset("../simple-ssr/edge-build"),
+    //   memorySize: 128,
+    //   timeout: Duration.seconds(5),
+    //   handler: "index.handler"
+    // });
 
-    const ssrEdgeFunctionVersion = new lambda.Version(
-      this,
-      "ssrEdgeHandlerVersion",
-      { lambda: ssrEdgeFunction }
-    );
+    // const ssrEdgeFunctionVersion = new lambda.Version(
+    //   this,
+    //   "ssrEdgeHandlerVersion",
+    //   { lambda: ssrEdgeFunction }
+    // );
 
     const ssrApi = new apigw.LambdaRestApi(this, "ssrEndpoint", {
       handler: ssrFunction
@@ -74,23 +74,23 @@ export class SsrStack extends cdk.Stack {
       "ssr-cdn",
       {
         originConfigs: [
-          {
-            s3OriginSource: {
-              s3BucketSource: mySiteBucket,
-              originAccessIdentity: originAccessIdentity
-            },
-            behaviors: [
-              {
-                isDefaultBehavior: true,
-                lambdaFunctionAssociations: [
-                  {
-                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: ssrEdgeFunctionVersion
-                  }
-                ]
-              }
-            ]
-          },
+          // {
+          //   s3OriginSource: {
+          //     s3BucketSource: mySiteBucket,
+          //     originAccessIdentity: originAccessIdentity
+          //   },
+          //   behaviors: [
+          //     {
+          //       isDefaultBehavior: true,
+          //       lambdaFunctionAssociations: [
+          //         {
+          //           eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
+          //           lambdaFunction: ssrEdgeFunctionVersion
+          //         }
+          //       ]
+          //     }
+          //   ]
+          // },
           {
             customOriginSource: {
               domainName: apiDomainName,
@@ -99,6 +99,7 @@ export class SsrStack extends cdk.Stack {
             },
             behaviors: [
               {
+                isDefaultBehavior: true,
                 pathPattern: "/ssr"
               }
             ]
@@ -113,8 +114,8 @@ export class SsrStack extends cdk.Stack {
     new cdk.CfnOutput(this, "Lambda SSR URL", {
       value: `https://${distribution.distributionDomainName}/ssr`
     });
-    new cdk.CfnOutput(this, "Lambda@Edge SSR URL", {
-      value: `https://${distribution.distributionDomainName}/edgessr`
-    });
+    // new cdk.CfnOutput(this, "Lambda@Edge SSR URL", {
+    //   value: `https://${distribution.distributionDomainName}/edgessr`
+    // });
   }
 }
