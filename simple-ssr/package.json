@@ -18,8 +18,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "build-server": "webpack --config webpack.server.js --mode=development",
-    "build-edge": "webpack --config webpack.edge.js --mode=development",
-    "build-all": "npm-run-all --parallel build build-server build-edge"
+    "build-all": "npm-run-all --parallel build build-server"
   },
   "eslintConfig": {
     "extends": "react-app"

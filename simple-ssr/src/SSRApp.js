@@ -3,12 +3,13 @@
 
 import React, { useState } from "react";
 import ProductList from "./components/ProductList";
+import LearnBetterLife from "./components/LearnBetterLife";
 
 const SSRApp = ({ data }) => {
   const [result, setResult] = useState({ loading: false, products: data });
   return (
     <div>
-      <ProductList result={result} />
+       <LearnBetterLife />
     </div>
   );
 };
