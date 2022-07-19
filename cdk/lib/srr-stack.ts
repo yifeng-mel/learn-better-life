@@ -74,23 +74,23 @@ export class SsrStack extends cdk.Stack {
       "ssr-cdn",
       {
         originConfigs: [
-          // {
-          //   s3OriginSource: {
-          //     s3BucketSource: mySiteBucket,
-          //     originAccessIdentity: originAccessIdentity
-          //   },
-          //   behaviors: [
-          //     {
-          //       isDefaultBehavior: true,
-          //       lambdaFunctionAssociations: [
-          //         {
-          //           eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-          //           lambdaFunction: ssrEdgeFunctionVersion
-          //         }
-          //       ]
-          //     }
-          //   ]
-          // },
+          {
+            s3OriginSource: {
+              s3BucketSource: mySiteBucket,
+              originAccessIdentity: originAccessIdentity
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: true,
+                // lambdaFunctionAssociations: [
+                //   {
+                //     eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
+                //     lambdaFunction: ssrEdgeFunctionVersion
+                //   }
+                // ]
+              }
+            ]
+          },
           {
             customOriginSource: {
               domainName: apiDomainName,
@@ -99,7 +99,6 @@ export class SsrStack extends cdk.Stack {
             },
             behaviors: [
               {
-                isDefaultBehavior: true,
                 pathPattern: "/ssr"
               }
             ]
