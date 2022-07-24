@@ -3,9 +3,6 @@ import Head from 'next/head'
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
 import Script from 'next/script';
 
 const LearnBetterLife = ({ result }) => {
@@ -163,27 +160,22 @@ const LearnBetterLife = ({ result }) => {
           </div>
         </Box>
         <Box>
-          <Table>
-            <TableRow>
-              <TableCell variant="head">Monthly Repayment:</TableCell>
-              <TableCell>{repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell variant="head">Monthly Net Income:</TableCell>
-              <TableCell>{netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell variant="head">Monthly Balance:</TableCell>
-              <TableCell>{repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell variant="head">Total Payment:</TableCell>
-              <TableCell>{repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
-            </TableRow>
-          </Table>
+          <span>
+            Monthly Repayment: {repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+          </span>
+          <div>
+            Monthly Net Income: {netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+          </div>
+          <div>
+            Monthly Balance: {repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+          </div>
+          <div>
+            Total Payment: {repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
+          </div>
         </Box>
+
       </div>
-    </div>
+    </div >
   );
 };
 export default LearnBetterLife;
