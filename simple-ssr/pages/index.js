@@ -1,5 +1,12 @@
 import React, { useState } from "react";
 import Head from 'next/head'
+import TextField from '@mui/material/TextField';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Table from '@mui/material/Table';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 
 const LearnBetterLife = ({ result }) => {
   const [loanAmount, setLoanAmount] = useState();
@@ -57,10 +64,10 @@ const LearnBetterLife = ({ result }) => {
 
   const calMonNetIncome = (annualSalary) => {
     if (annualSalary < 23365 && !partnerSalary) {
-      return (annualSalary - calTax(annualSalary))  / 12
-    } 
+      return (annualSalary - calTax(annualSalary)) / 12
+    }
 
-    return (annualSalary - calTax(annualSalary) - annualSalary * 0.02)  / 12
+    return (annualSalary - calTax(annualSalary) - annualSalary * 0.02) / 12
   }
 
 
@@ -77,28 +84,92 @@ const LearnBetterLife = ({ result }) => {
         <meta name="description" content="Learn to live a better life! Let\'s start with knowing our mortage and salary better." />
       </Head>
       <div>
-        Principal Loan Amount: <input type="text" onChange={e => setLoanAmount(e.target.value)} />
-        Annual Interest Rate: <input type="text" onChange={e => setInterest(e.target.value)} />
-        Term(years): <input type="text" onChange={e => setTerm(e.target.value)} />
-      </div>
-      <div>
-        My Annual Income: <input type="text" onChange={e => setMySalary(e.target.value)}/>
-        Partner Annual Income (optional) <input type="text" onChange={e => setPartnerySalary(e.target.value)}/>
-      </div>
-      <div>
-        <button onClick={calculate}>Calculate</button>
-      </div>
-      <div>
-        Total Payment: <label>{repayment ? (repayment * term * 12).toFixed(2) : ''}</label>
-      </div>
-      <div>
-        Monthly Repayment: <label>{repayment ? repayment.toFixed(2) : ''}</label>
-      </div>
-      <div>
-        Monthly Net Income: <label>{netIncome ? netIncome.toFixed(2) : ''}</label>
-      </div>
-      <div>
-        Monthly Balance: <label>{repayment && netIncome ? (netIncome - repayment).toFixed(2) : ''}</label>
+        <Box
+          component="form"
+          sx={{
+            '& .MuiTextField-root': { m: 1, width: '25ch' },
+          }}
+          noValidate
+          autoComplete="off"
+        >
+          <TextField
+            required
+            id="filled-number"
+            label="Principal Loan Amount"
+            type="number"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="standard"
+            onChange={e => setLoanAmount(e.target.value)}
+          />
+          <TextField
+            required
+            id="filled-number"
+            label="Annual Interest Rate"
+            type="number"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="standard"
+            onChange={e => setInterest(e.target.value)}
+          />
+          <TextField
+            required
+            id="filled-number"
+            label="Term(years)"
+            type="number"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="standard"
+            onChange={e => setTerm(e.target.value)}
+          />
+          <TextField
+            required
+            id="filled-number"
+            label="My Annual Income"
+            type="number"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="standard"
+            onChange={e => setMySalary(e.target.value)}
+          />
+          <TextField
+            id="filled-number"
+            label="Partner Annual Income (optional)"
+            type="number"
+            InputLabelProps={{
+              shrink: true,
+            }}
+            variant="standard"
+            onChange={e => setPartnerySalary(e.target.value)}
+          />
+          <div>
+            <Button variant="contained" onClick={calculate}>Calculate</Button>
+          </div>
+        </Box>
+        <Box>
+          <Table>
+            <TableRow>
+              <TableCell variant="head">Monthly Repayment:</TableCell>
+              <TableCell>{repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell variant="head">Monthly Net Income:</TableCell>
+              <TableCell>{netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell variant="head">Monthly Balance:</TableCell>
+              <TableCell>{repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell variant="head">Total Payment:</TableCell>
+              <TableCell>{repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+            </TableRow>
+          </Table>
+        </Box>
       </div>
     </div>
   );
