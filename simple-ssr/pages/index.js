@@ -3,10 +3,10 @@ import Head from 'next/head'
 import TextField from '@mui/material/TextField';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
+import Script from 'next/script';
 
 const LearnBetterLife = ({ result }) => {
   const [loanAmount, setLoanAmount] = useState();
@@ -83,6 +83,18 @@ const LearnBetterLife = ({ result }) => {
         <meta name="viewport" content="initial-scale=1.0, width=device-width" />
         <meta name="description" content="Learn to live a better life! Let\'s start with knowing our mortage and salary better." />
       </Head>
+      <Script strategy="lazyOnload" src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`} />
+
+      <Script strategy="lazyOnload">
+        {`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}', {
+        page_path: window.location.pathname,
+        });
+    `}
+      </Script>
       <div>
         <Box
           component="form"
@@ -154,19 +166,19 @@ const LearnBetterLife = ({ result }) => {
           <Table>
             <TableRow>
               <TableCell variant="head">Monthly Repayment:</TableCell>
-              <TableCell>{repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+              <TableCell>{repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell variant="head">Monthly Net Income:</TableCell>
-              <TableCell>{netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+              <TableCell>{netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell variant="head">Monthly Balance:</TableCell>
-              <TableCell>{repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+              <TableCell>{repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
             </TableRow>
             <TableRow>
               <TableCell variant="head">Total Payment:</TableCell>
-              <TableCell>{repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, {maximumFractionDigits:2}) : ''}</TableCell>
+              <TableCell>{repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}</TableCell>
             </TableRow>
           </Table>
         </Box>
