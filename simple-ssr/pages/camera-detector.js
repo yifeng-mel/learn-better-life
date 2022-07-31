@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import cameras from "./cameras";
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     var R = 6371; // Radius of the earth in km
@@ -19,26 +20,57 @@ function deg2rad(deg) {
 }
 
 export default function FirstPost() {
-    const [latitude, setLatitude] = useState();
-    const [longitude, setLongtitude] = useState();
-
+    const [foundIndex, setFoundIndex] = useState();
+    const [distance, setDistance] = useState();
     // 🆗 Ship it
     useEffect(() => {
-        (async () => {
-            const position = await new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject);
-            });
-            let latitude = position.coords.latitude;
-            let longitude = position.coords.longitude;
+        const interval = setInterval(() => {
+            (async () => {
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject);
+                });
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
+                let camera_distance = 0;
 
-            setLatitude(latitude)
-            setLongtitude(longitude)
-        })();
+                const foundIndex = cameras.findIndex((camera) => {
+                    const lat = parseFloat(camera.lat)
+                    const lon = parseFloat(camera.lon)
+                    const distance = getDistanceFromLatLonInKm(latitude, longitude, lat, lon)
+                    camera_distance = distance
+                    return distance < 1
+                })
+
+                setFoundIndex(foundIndex)
+                setDistance(camera_distance)
+            })();
+        }, 2000);
+
+        (async () => {
+            const wakeLock = await navigator.wakeLock.request('screen');
+        })()
 
         return () => {
+            clearInterval(interval)
+            wakeLock.release()
+                .then(() => {
+                    wakeLock = null;
+                });
             // this now gets called when the component unmounts
         };
     }, []);
 
-    return <h1>Latitude: {latitude} <br /> Longitude: {longitude}</h1>;
+    return (
+        <div style={{ background: foundIndex > -1 ? 'red' : 'green', height: "100vh" }}>
+            <h1>
+                {distance ? distance.toFixed(2) + ' km' : ''}
+            </h1>
+            <h1>
+                {foundIndex > -1 ? cameras[foundIndex].location : ''}
+            </h1>
+            <h2>
+                {foundIndex > -1 ? cameras[foundIndex].lat + ',' + cameras[foundIndex].lon : ''}
+            </h2>
+        </div>
+    );
 }
