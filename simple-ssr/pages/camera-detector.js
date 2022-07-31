@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import cameras from "./cameras";
+import cameras from "../src/utils/cameras";
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     var R = 6371; // Radius of the earth in km
@@ -52,10 +52,6 @@ export default function FirstPost() {
 
         return () => {
             clearInterval(interval)
-            wakeLock.release()
-                .then(() => {
-                    wakeLock = null;
-                });
             // this now gets called when the component unmounts
         };
     }, []);
