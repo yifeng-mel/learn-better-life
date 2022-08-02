@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import cameras from "../src/utils/cameras";
+import NoSleep from "nosleep.js";
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     var R = 6371; // Radius of the earth in km
@@ -38,7 +39,7 @@ export default function FirstPost() {
                     const lon = parseFloat(camera.lon)
                     const distance = getDistanceFromLatLonInKm(latitude, longitude, lat, lon)
                     camera_distance = distance
-                    return distance < 1
+                    return distance < 0.5
                 })
 
                 setFoundIndex(foundIndex)
@@ -46,20 +47,31 @@ export default function FirstPost() {
             })();
         }, 2000);
 
-        (async () => {
-            const wakeLock = await navigator.wakeLock.request('screen');
-        })()
+        let isEnableNoSleep = false;
+        const noSleep = new NoSleep();
+        document.addEventListener(
+            `click`,
+            function enableNoSleep() {
+                document.removeEventListener(`click`, enableNoSleep, false);
+                noSleep.enable();
+                isEnableNoSleep = true;
+                alert(`Your screen will keep on`);
+                document.getElementById("banner").remove();
+            },
+            false
+        );
 
         return () => {
             clearInterval(interval)
-            // this now gets called when the component unmounts
         };
     }, []);
 
     return (
         <div style={{ background: foundIndex > -1 ? 'red' : 'green', height: "100vh" }}>
+            <div id="banner">Click Screen to Keep Screen on</div>
+
             <h1>
-                {distance ? distance.toFixed(2) + ' km' : ''}
+                {foundIndex > -1 && distance ? distance.toFixed(2) + ' km' : ''}
             </h1>
             <h1>
                 {foundIndex > -1 ? cameras[foundIndex].location : ''}
