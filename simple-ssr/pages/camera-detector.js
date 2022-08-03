@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import cameras from "../src/utils/cameras";
 import NoSleep from "nosleep.js";
+import { Typography, Divider, Card, CardContent, Grid } from "@mui/material";
+import Head from 'next/head'
+import { Box } from "@mui/system";
+import Script from 'next/script';
 
 function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
     var R = 6371; // Radius of the earth in km
@@ -68,17 +72,69 @@ export default function FirstPost() {
 
     return (
         <div style={{ background: foundIndex > -1 ? 'red' : 'green', height: "100vh" }}>
-            <div id="banner">Click Screen to Keep Screen on</div>
+            <Head>
+                <title>Victoria Camera Detector</title>
+                <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+                <meta name="description" content="This app helps you detect fixed road safety camera within 500 meters in Victoria, Australia." />
+            </Head>
+            <Script strategy="lazyOnload" src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`} />
 
-            <h1>
+            <Script strategy="lazyOnload">
+                {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}', {
+                page_path: window.location.pathname,
+                });
+                `}
+            </Script>
+            <Typography variant="h5" align="center">
+                {foundIndex == -1 || !distance ? 'No camera detected within 500 meters' : ''}
+            </Typography>
+            <Typography variant="h5" align="center">
+                {foundIndex > -1 && distance ? 'Nearest Camera: ' : ''}
+            </Typography>
+            <Typography variant="h2" align="center">
                 {foundIndex > -1 && distance ? distance.toFixed(2) + ' km' : ''}
-            </h1>
-            <h1>
-                {foundIndex > -1 ? cameras[foundIndex].location : ''}
-            </h1>
-            <h2>
-                {foundIndex > -1 ? cameras[foundIndex].lat + ',' + cameras[foundIndex].lon : ''}
-            </h2>
+            </Typography>
+            <Divider />
+            <Box sx={{ p: 2 }}>
+                <Typography variant="h5" align="center">
+                    {foundIndex > -1 && distance ? 'Camera Location: ' : ''}
+                </Typography>
+                <Typography variant="body1" align="center">
+                    {foundIndex > -1 ? cameras[foundIndex].location : ''}
+                </Typography>
+            </Box>
+
+            <Box sx={{ pb: 2 }}>
+                <Typography variant="h5" align="center">
+                    {foundIndex > -1 && distance ? 'Camera Coordinate: ' : ''}
+                </Typography>
+                <Typography variant="body1" align="center">
+                    {foundIndex > -1 ? cameras[foundIndex].lat + ',' + cameras[foundIndex].lon : ''}
+                </Typography>
+            </Box>
+
+            <div id="banner"><Typography align="center">Click Screen to Keep Screen on</Typography></div>
+            <br></br>
+            <Grid
+                container
+                spacing={0}
+                direction="column"
+                alignItems="center"
+                justify="center"
+                style={{ minHeight: '100vh' }}
+            >
+                <Card style={{ maxWidth: '300px' }}>
+                    <CardContent>
+                        <Typography variant="body1" component="div" sx={{ flexGrow: 1 }}>
+                            This app helps you detect fixed road safety camera within 500 meters in Victoria, Australia. Please enable your broswer to access your location to use this app.
+                        </Typography>
+                    </CardContent>
+                </Card>
+            </Grid>
         </div>
     );
 }
