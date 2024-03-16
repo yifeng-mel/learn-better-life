@@ -8,6 +8,7 @@ import { List, ListItem, ListItemText, Typography } from '@mui/material';
 const NewPage = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [matchSchools, setMatchSchools] = useState([]);
+  const [nearbyRoads, setNearbyRoads] = useState([]);
 
   useEffect(() => {
     // Step 1: Get Current Location
@@ -17,7 +18,7 @@ const NewPage = () => {
           // mount waverly primary school example
           // const latitude = -37.87977526729626
           // const longitude = 145.1251931720104
-          
+
           const { latitude, longitude } = position.coords;
           setCurrentLocation({ latitude, longitude });
 
@@ -42,6 +43,28 @@ const NewPage = () => {
           setMatchSchools(matchedSchools);
 
           console.log(matchedSchools)
+
+          const getNearbyRoads = async () => {
+            try {
+              // Step 2: Fetch Nearby Roads
+              const response = await fetch('https://0487-144-138-48-234.ngrok-free.app/get-nearby-roads', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lat: latitude, long: longitude })
+              });
+              if (!response.ok) {
+                throw new Error('Failed to fetch nearby roads');
+              }
+              const data = await response.json();
+              setNearbyRoads(data);
+            } catch (error) {
+              console.error('Error fetching nearby roads:', error.message);
+            }
+          }
+
+          getNearbyRoads();
         },
         (error) => {
           console.error('Error getting current location:', error.message);
@@ -64,7 +87,7 @@ const NewPage = () => {
           </Typography>
         </div>
       )}
-  
+
       {matchSchools.length > 0 ? (
         <List>
           {matchSchools.map((school, index) => (
@@ -101,6 +124,24 @@ const NewPage = () => {
           No school found
         </Typography>
       )}
+
+      {nearbyRoads.length > 0 ? (
+        <List>
+          {nearbyRoads.map((road, index) => (
+            <ListItem key={index} divider>
+              <ListItemText
+                primary={road.roadName}
+                secondary={`Distance: ${road.distance.toFixed(2)} meters`}
+              />
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
+          No nearby roads found
+        </Typography>
+      )}
+
     </div>
   );
 };
