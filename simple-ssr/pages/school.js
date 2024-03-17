@@ -1,6 +1,7 @@
 // pages/newpage.js
 import React from 'react';
 import schools from "../src/utils/schools";
+import high_schools from '../src/utils/high_schools';
 import { useEffect, useState } from 'react';
 import * as turf from '@turf/turf';
 import { List, ListItem, ListItemText, Typography } from '@mui/material';
@@ -8,10 +9,10 @@ import { List, ListItem, ListItemText, Typography } from '@mui/material';
 const NewPage = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [matchSchools, setMatchSchools] = useState([]);
+  const [matchHighSchools, setMatchHighSchools] = useState([]);
   const [nearbyRoads, setNearbyRoads] = useState([]);
 
   useEffect(() => {
-    // Step 1: Get Current Location
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -22,11 +23,10 @@ const NewPage = () => {
           const { latitude, longitude } = position.coords;
           setCurrentLocation({ latitude, longitude });
 
-          // Step 2: Check if Current Location is within any School Catchment
           const point = turf.point([longitude, latitude]);
 
+          // match primary schools
           schools.features.forEach((feature) => {
-            // console.log(feature.geometry.coordinates)
             const polygon = turf.polygon(feature.geometry.coordinates);
             if (turf.booleanPointInPolygon(point, polygon)) {
               console.log(`Current location is within the catchment of ${feature.properties.name}`);
@@ -34,7 +34,6 @@ const NewPage = () => {
           });
 
           var matchedSchools = schools.features.filter((feature) => {
-            // console.log(feature.geometry.coordinates)
             const polygon = turf.polygon(feature.geometry.coordinates);
 
             return turf.booleanPointInPolygon(point, polygon);
@@ -42,11 +41,25 @@ const NewPage = () => {
 
           setMatchSchools(matchedSchools);
 
-          console.log(matchedSchools)
+          // match high schools
+          high_schools.features.forEach((feature) => {
+            const polygon = turf.polygon(feature.geometry.coordinates);
+            if (turf.booleanPointInPolygon(point, polygon)) {
+              console.log(`Current location is within the catchment of ${feature.properties.name}`);
+            }
+          });
 
+          var matchedHighSchools = high_schools.features.filter((feature) => {
+            const polygon = turf.polygon(feature.geometry.coordinates);
+
+            return turf.booleanPointInPolygon(point, polygon);
+          })
+
+          setMatchHighSchools(matchedHighSchools);
+
+          // get nearby roads
           const getNearbyRoads = async () => {
             try {
-              // Step 2: Fetch Nearby Roads
               const response = await fetch('https://0487-144-138-48-234.ngrok-free.app/get-nearby-roads', {
                 method: 'POST',
                 headers: {
@@ -122,6 +135,43 @@ const NewPage = () => {
       ) : (
         <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
           No school found
+        </Typography>
+      )}
+
+      {matchHighSchools.length > 0 ? (
+        <List>
+          {matchHighSchools.map((school, index) => (
+            <ListItem key={index} divider>
+              <ListItemText
+                primary={
+                  <React.Fragment>
+                    <Typography variant="h6" component="div">
+                      {school.properties.School_Name}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>Overall Score:</strong> {school.properties.overallScore}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>Enrollments:</strong> {school.properties.totalEnrollments}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>Postcode:</strong> {school.properties.postcode}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>Percentile:</strong> {school.properties.percentile}
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      <strong>ICSEA:</strong> {school.properties.icsea}
+                    </Typography>
+                  </React.Fragment>
+                }
+              />
+            </ListItem>
+          ))}
+        </List>
+      ) : (
+        <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
+          No high school found
         </Typography>
       )}
 
