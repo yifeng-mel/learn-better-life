@@ -131,9 +131,6 @@ const NewPage = () => {
 
 {matchSchools.length > 0 ? (
   <Box mb={2}>
-    <Typography variant="h5" gutterBottom align="center">
-      Top Primary Schools
-    </Typography>
     <List>
       {matchSchools.map((school, index) => (
         <ListItem key={index} divider>
@@ -173,9 +170,6 @@ const NewPage = () => {
 
 {matchHighSchools.length > 0 ? (
   <Box mb={2}>
-    <Typography variant="h5" gutterBottom align="center">
-      Top High Schools
-    </Typography>
     <List>
       {matchHighSchools.map((school, index) => (
         <ListItem key={index} divider>
@@ -215,9 +209,6 @@ const NewPage = () => {
 
 {nearbyRoads.length > 0 ? (
   <Box mb={2}>
-    <Typography variant="h5" gutterBottom align="center">
-      Nearby Roads
-    </Typography>
     <List>
       {nearbyRoads.map((road, index) => (
         <ListItem key={index} divider>
@@ -237,9 +228,6 @@ const NewPage = () => {
 
 {nearbyStations.length > 0 ? (
   <Box mb={2}>
-    <Typography variant="h5" gutterBottom align="center">
-      Nearby Stations
-    </Typography>
     <List>
       {nearbyStations.map((nearest, index) => (
         <ListItem key={index} divider>
