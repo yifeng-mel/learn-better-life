@@ -6,6 +6,7 @@ import stations from '../src/utils/stations';
 import { useEffect, useState } from 'react';
 // import * as turf from '@turf/turf';
 import { List, ListItem, ListItemText, Typography, Box } from '@mui/material';
+import Head from 'next/head'
 
 const turf = require('@turf/turf');
 
@@ -118,6 +119,12 @@ const NewPage = () => {
 
   return (
     <div>
+      <Head>
+        <title>Nearby top schools</title>
+        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
+        <meta name="description" content="Learn to live a better life! Let's know our location better." />
+      </Head>
+
 {currentLocation && (
   <div style={{ padding: '16px', backgroundColor: '#f0f0f0', marginBottom: '16px' }}>
     <Typography variant="h5" gutterBottom align="center">
