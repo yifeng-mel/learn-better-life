@@ -2,15 +2,19 @@
 import React from 'react';
 import schools from "../src/utils/schools";
 import high_schools from '../src/utils/high_schools';
+import stations from '../src/utils/stations';
 import { useEffect, useState } from 'react';
-import * as turf from '@turf/turf';
-import { List, ListItem, ListItemText, Typography } from '@mui/material';
+// import * as turf from '@turf/turf';
+import { List, ListItem, ListItemText, Typography, Box } from '@mui/material';
+
+const turf = require('@turf/turf');
 
 const NewPage = () => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [matchSchools, setMatchSchools] = useState([]);
   const [matchHighSchools, setMatchHighSchools] = useState([]);
   const [nearbyRoads, setNearbyRoads] = useState([]);
+  const [nearbyStations, setNearbyStations] = useState([]);
 
   useEffect(() => {
     if ('geolocation' in navigator) {
@@ -78,6 +82,30 @@ const NewPage = () => {
           }
 
           getNearbyRoads();
+
+          // Convert stations data to Turf points
+          const turfStations = turf.featureCollection(stations.features.map(station => ({
+            type: 'Feature',
+            properties: station.properties,
+            geometry: {
+              type: 'Point',
+              coordinates: station.geometry.coordinates
+            }
+          })));
+
+          // Calculate distances from the given point to all stations
+          const distances = turfStations.features.map(station => {
+            const distance = turf.distance(point, station, { units: 'kilometers' });
+            return { station, distance };
+          });
+
+          // Sort stations based on distances
+          distances.sort((a, b) => a.distance - b.distance);
+
+          // Select the nearest 3 stations
+          const nearestStations = distances.slice(0, 3);
+          setNearbyStations(nearestStations)
+
         },
         (error) => {
           console.error('Error getting current location:', error.message);
@@ -90,107 +118,145 @@ const NewPage = () => {
 
   return (
     <div>
-      {currentLocation && (
-        <div style={{ padding: '16px', backgroundColor: '#f0f0f0' }}>
-          <Typography variant="h5" gutterBottom>
-            Current Location
-          </Typography>
-          <Typography variant="body1">
-            Latitude: {currentLocation.latitude.toFixed(4)}, Longitude: {currentLocation.longitude.toFixed(4)}
-          </Typography>
-        </div>
-      )}
+{currentLocation && (
+  <div style={{ padding: '16px', backgroundColor: '#f0f0f0', marginBottom: '16px' }}>
+    <Typography variant="h5" gutterBottom align="center">
+      Current Location
+    </Typography>
+    <Typography variant="body1" align="center">
+      Latitude: {currentLocation.latitude.toFixed(4)}, Longitude: {currentLocation.longitude.toFixed(4)}
+    </Typography>
+  </div>
+)}
 
-      {matchSchools.length > 0 ? (
-        <List>
-          {matchSchools.map((school, index) => (
-            <ListItem key={index} divider>
-              <ListItemText
-                primary={
-                  <React.Fragment>
-                    <Typography variant="h6" component="div">
-                      {school.properties.School_Name}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Overall Score:</strong> {school.properties.overallScore}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Enrollments:</strong> {school.properties.totalEnrollments}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Postcode:</strong> {school.properties.postcode}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Percentile:</strong> {school.properties.percentile}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>ICSEA:</strong> {school.properties.icsea}
-                    </Typography>
-                  </React.Fragment>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
-          No school found
-        </Typography>
-      )}
+{matchSchools.length > 0 ? (
+  <Box mb={2}>
+    <Typography variant="h5" gutterBottom align="center">
+      Top Primary Schools
+    </Typography>
+    <List>
+      {matchSchools.map((school, index) => (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary={
+              <React.Fragment>
+                <Typography variant="h6" component="div">
+                  {school.properties.School_Name}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Overall Score:</strong> {school.properties.overallScore}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Enrollments:</strong> {school.properties.totalEnrollments}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Postcode:</strong> {school.properties.postcode}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Percentile:</strong> {school.properties.percentile}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>ICSEA:</strong> {school.properties.icsea}
+                </Typography>
+              </React.Fragment>
+            }
+          />
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+) : (
+  <Typography variant="h6" color="textSecondary" style={{ padding: '16px', textAlign: 'center' }}>
+    No top primary schools found
+  </Typography>
+)}
 
-      {matchHighSchools.length > 0 ? (
-        <List>
-          {matchHighSchools.map((school, index) => (
-            <ListItem key={index} divider>
-              <ListItemText
-                primary={
-                  <React.Fragment>
-                    <Typography variant="h6" component="div">
-                      {school.properties.School_Name}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Overall Score:</strong> {school.properties.overallScore}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Enrollments:</strong> {school.properties.totalEnrollments}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Postcode:</strong> {school.properties.postcode}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>Percentile:</strong> {school.properties.percentile}
-                    </Typography>
-                    <Typography variant="body2" color="text.primary">
-                      <strong>ICSEA:</strong> {school.properties.icsea}
-                    </Typography>
-                  </React.Fragment>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
-          No high school found
-        </Typography>
-      )}
+{matchHighSchools.length > 0 ? (
+  <Box mb={2}>
+    <Typography variant="h5" gutterBottom align="center">
+      Top High Schools
+    </Typography>
+    <List>
+      {matchHighSchools.map((school, index) => (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary={
+              <React.Fragment>
+                <Typography variant="h6" component="div">
+                  {school.properties.School_Name}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Overall Score:</strong> {school.properties.overallScore}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Enrollments:</strong> {school.properties.totalEnrollments}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Postcode:</strong> {school.properties.postcode}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>Percentile:</strong> {school.properties.percentile}
+                </Typography>
+                <Typography variant="body2" color="text.primary">
+                  <strong>ICSEA:</strong> {school.properties.icsea}
+                </Typography>
+              </React.Fragment>
+            }
+          />
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+) : (
+  <Typography variant="h6" color="textSecondary" style={{ padding: '16px', textAlign: 'center' }}>
+    No top high schools found
+  </Typography>
+)}
 
-      {nearbyRoads.length > 0 ? (
-        <List>
-          {nearbyRoads.map((road, index) => (
-            <ListItem key={index} divider>
-              <ListItemText
-                primary={road.roadName}
-                secondary={`Distance: ${road.distance.toFixed(2)} meters`}
-              />
-            </ListItem>
-          ))}
-        </List>
-      ) : (
-        <Typography variant="h6" color="textSecondary" style={{ padding: '16px' }}>
-          No nearby roads found
-        </Typography>
-      )}
+{nearbyRoads.length > 0 ? (
+  <Box mb={2}>
+    <Typography variant="h5" gutterBottom align="center">
+      Nearby Roads
+    </Typography>
+    <List>
+      {nearbyRoads.map((road, index) => (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary={road.roadName}
+            secondary={`Distance: ${road.distance.toFixed(2)} meters`}
+          />
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+) : (
+  <Typography variant="h6" color="textSecondary" style={{ padding: '16px', textAlign: 'center' }}>
+    No nearby roads found
+  </Typography>
+)}
+
+{nearbyStations.length > 0 ? (
+  <Box mb={2}>
+    <Typography variant="h5" gutterBottom align="center">
+      Nearby Stations
+    </Typography>
+    <List>
+      {nearbyStations.map((nearest, index) => (
+        <ListItem key={index} divider>
+          <ListItemText
+            primary={nearest.station.properties.STOP_NAME}
+            secondary={`Distance: ${nearest.distance.toFixed(2)} kilometers`}
+          />
+        </ListItem>
+      ))}
+    </List>
+  </Box>
+) : (
+  <Typography variant="h6" color="textSecondary" style={{ padding: '16px', textAlign: 'center' }}>
+    No nearby stations found
+  </Typography>
+)}
+
 
     </div>
   );
