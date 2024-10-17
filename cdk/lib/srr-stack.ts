@@ -40,7 +40,11 @@ export class SsrStack extends cdk.Stack {
 
     new s3deploy.BucketDeployment(this, "Client-side React app", {
       sources: [s3deploy.Source.asset("../simple-ssr/out/")],
-      destinationBucket: mySiteBucket
+      destinationBucket: mySiteBucket,
+      cacheControl: [
+        s3deploy.CacheControl.setPublic(),
+        s3deploy.CacheControl.maxAge(Duration.days(1)), // Cache for 1 day
+      ],
     });
 
     const primaryDomain = "learnbetterlife.com"
