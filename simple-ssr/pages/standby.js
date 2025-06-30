@@ -30,85 +30,121 @@ export default function AnalogClock() {
   return (
     <Box
       sx={{
-        width: 300,
-        height: 300,
-        borderRadius: "50%",
-        border: "6px solid #ccc",
-        position: "relative",
-        background: "radial-gradient(circle, #111 40%, #000 100%)",
-        mx: "auto",
+        width: "100vw",
+        height: "100vh",
+        backgroundColor: "#121212",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      {/* Hands */}
       <Box
-        ref={hourRef}
         sx={{
-          position: "absolute",
-          width: 4,
-          height: 70,
-          bgcolor: "white",
-          borderRadius: 2,
-          top: 80,
-          left: "50%",
-          transform: "translateX(-50%)",
-          transformOrigin: "bottom",
-          zIndex: 2,
+          width: 300,
+          height: 300,
+          borderRadius: "50%",
+          border: "6px solid #444",
+          position: "relative",
+          background: `
+            radial-gradient(circle at center, #222 30%, #000 100%),
+            linear-gradient(145deg, #1a1a1a, #000)
+          `,
+          boxShadow: `
+            0 0 20px rgba(0, 0, 0, 0.7),
+            inset 0 0 15px rgba(255, 255, 255, 0.05)
+          `,
         }}
-      />
-      <Box
-        ref={minuteRef}
-        sx={{
-          position: "absolute",
-          width: 3,
-          height: 100,
-          bgcolor: "white",
-          borderRadius: 2,
-          top: 50,
-          left: "50%",
-          transform: "translateX(-50%)",
-          transformOrigin: "bottom",
-          zIndex: 2,
-        }}
-      />
-      <Box
-        ref={secondRef}
-        sx={{
-          position: "absolute",
-          width: 2,
-          height: 120,
-          bgcolor: "red",
-          borderRadius: 2,
-          top: 30,
-          left: "50%",
-          transform: "translateX(-50%)",
-          transformOrigin: "bottom",
-          zIndex: 1,
-        }}
-      />
+      >
+        {/* Hour Hand */}
+        <Box
+          ref={hourRef}
+          sx={{
+            position: "absolute",
+            width: 4,
+            height: 70,
+            bgcolor: "#fff",
+            borderRadius: 2,
+            top: 80,
+            left: "50%",
+            transform: "translateX(-50%)",
+            transformOrigin: "bottom",
+            zIndex: 2,
+          }}
+        />
+        {/* Minute Hand */}
+        <Box
+          ref={minuteRef}
+          sx={{
+            position: "absolute",
+            width: 3,
+            height: 100,
+            bgcolor: "#ccc",
+            borderRadius: 2,
+            top: 50,
+            left: "50%",
+            transform: "translateX(-50%)",
+            transformOrigin: "bottom",
+            zIndex: 2,
+          }}
+        />
+        {/* Second Hand */}
+        <Box
+          ref={secondRef}
+          sx={{
+            position: "absolute",
+            width: 2,
+            height: 120,
+            bgcolor: "#f44336",
+            borderRadius: 2,
+            top: 30,
+            left: "50%",
+            transform: "translateX(-50%)",
+            transformOrigin: "bottom",
+            zIndex: 1,
+          }}
+        />
 
-      {/* Numbers */}
-      {numbers.map((num) => {
-        const angle = ((num - 3) * 30 * Math.PI) / 180;
-        const radius = 130;
-        const x = 150 + radius * Math.cos(angle);
-        const y = 150 + radius * Math.sin(angle);
-        return (
-          <Box
-            key={num}
-            sx={{
-              position: "absolute",
-              top: y,
-              left: x,
-              transform: "translate(-50%, -50%)",
-              color: "#ddd",
-              fontSize: 14,
-              fontWeight: 300,
-            }}
-          >
-            {num}
-          </Box>
-        );
-      })}
+        {/* Center Dot */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            width: 12,
+            height: 12,
+            bgcolor: "#fff",
+            borderRadius: "50%",
+            transform: "translate(-50%, -50%)",
+            boxShadow: "0 0 5px rgba(255, 255, 255, 0.8)",
+            zIndex: 3,
+          }}
+        />
+
+        {/* Numbers */}
+        {numbers.map((num) => {
+          const angle = ((num - 3) * 30 * Math.PI) / 180;
+          const radius = 130;
+          const x = 150 + radius * Math.cos(angle);
+          const y = 150 + radius * Math.sin(angle);
+          return (
+            <Box
+              key={num}
+              sx={{
+                position: "absolute",
+                top: y,
+                left: x,
+                transform: "translate(-50%, -50%)",
+                color: "#eee",
+                fontSize: 16,
+                fontWeight: 400,
+                textShadow: "0 0 4px rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              {num}
+            </Box>
+          );
+        })}
+      </Box>
     </Box>
   );
 }
