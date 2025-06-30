@@ -5,3 +5,6 @@ cd simple-ssr && npm run build && cd ../cdk && npm run build && cdk deploy SSRAp
 
 ## Invalidate Cloud Front Cache
 AWS Console -> CloudFront -> Distributions -> select the distribution -> Invalidations -> Create Invalidation -> /*
+
+## Pages URL example:
+https://learnbetterlife.com/standby.html
