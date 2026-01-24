@@ -13,6 +13,7 @@ const LearnBetterLife = () => {
   const [interest, setInterest] = useState(6.6);
   const [term, setTerm] = useState(30);
   const [repayment, setRepayment] = useState(null);
+  const [totalPaid, setTotalPaid] = useState(null);
 
   // ------------------------------
   // Stamp duty calculator
@@ -40,12 +41,14 @@ const LearnBetterLife = () => {
   const calculate = () => {
     if (!loanAmount || !interest || !term) return;
 
-    const result = calculateRepayment(
+    const monthlyRepayment = calculateRepayment(
       Number(loanAmount),
       Number(interest),
       Number(term)
     );
-    setRepayment(result);
+
+    setRepayment(monthlyRepayment);
+    setTotalPaid(monthlyRepayment * Number(term) * 12);
   };
 
   return (
@@ -72,7 +75,7 @@ const LearnBetterLife = () => {
 
       <Container maxWidth="sm">
         {/* ------------------------------ */}
-        {/* Stamp Duty Calculator (NEW)    */}
+        {/* Stamp Duty Calculator          */}
         {/* ------------------------------ */}
         <Box>
           <Typography variant="h5" gutterBottom>
@@ -141,7 +144,7 @@ const LearnBetterLife = () => {
           <Typography variant="h5" gutterBottom>
             Mortgage Repayment Calculator
           </Typography>
-          
+
           <TextField
             label="Loan Amount"
             type="text"
@@ -183,6 +186,13 @@ const LearnBetterLife = () => {
               <Typography variant="h6">
                 ${getReadableNumber(repayment)}
               </Typography>
+
+              <Box mt={1}>
+                <Typography>Total amount paid over {term} years:</Typography>
+                <Typography variant="h6">
+                  ${getReadableNumber(totalPaid)}
+                </Typography>
+              </Box>
             </Box>
           )}
         </Box>
