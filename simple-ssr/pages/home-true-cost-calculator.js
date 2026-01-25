@@ -4,7 +4,7 @@ import { Container, TextField, Button, Typography, Box } from "@mui/material";
 import Script from "next/script";
 import { calculateRepayment } from "../lib/repayment-calculator";
 import { stampDutyCalculators } from "../lib/stamp-duty-calculator";
-
+import { calculateTotalInterestWithOffset } from "../lib/offset-mortgage-calculator";
 const LearnBetterLife = () => {
   // ------------------------------
   // Mortgage calculator
@@ -21,6 +21,15 @@ const LearnBetterLife = () => {
   const [houseValue, setHouseValue] = useState("");
   const [selectedState, setSelectedState] = useState("VIC");
   const [stampDuty, setStampDuty] = useState(null);
+
+  // ------------------------------
+  // Offset interest saving
+  // ------------------------------
+  const [offsetLoan, setOffsetLoan] = useState("");
+  const [offsetInterest, setOffsetInterest] = useState(6.6);
+  const [offsetTerm, setOffsetTerm] = useState(30);
+  const [offsetAmount, setOffsetAmount] = useState("");
+  const [interestSaved, setInterestSaved] = useState(null);
 
   const formatNumber = (value) => {
     if (!value) return "";
@@ -51,6 +60,33 @@ const LearnBetterLife = () => {
     setTotalPaid(monthlyRepayment * Number(term) * 12);
   };
 
+  const calculateOffsetSaving = () => {
+    if (!offsetLoan || !offsetInterest || !offsetTerm) return;
+
+    const loan = Number(offsetLoan);
+    const rate = Number(offsetInterest);
+    const term = Number(offsetTerm);
+    const offset = Number(offsetAmount || 0);
+
+    // Normal loan (no offset)
+    const normal = calculateTotalInterestWithOffset(
+      loan,
+      rate,
+      term,
+      0
+    );
+
+    // Loan with offset
+    const withOffset = calculateTotalInterestWithOffset(
+      loan,
+      rate,
+      term,
+      offset
+    );
+
+    setInterestSaved(normal.totalInterest - withOffset.totalInterest);
+  };
+
   return (
     <>
       <Head>
@@ -74,6 +110,9 @@ const LearnBetterLife = () => {
       </Script>
 
       <Container maxWidth="sm">
+        {/* ------------------------------ */}
+        {/* Stamp Duty Calculator          */}
+        {/* ------------------------------ */}
         <Box>
           <Typography variant="h5" gutterBottom>
             Stamp Duty Calculator
@@ -134,6 +173,9 @@ const LearnBetterLife = () => {
           )}
         </Box>
 
+        {/* ------------------------------ */}
+        {/* Mortgage Repayment Calculator  */}
+        {/* ------------------------------ */}
         <Box mt={6}>
           <Typography variant="h5" gutterBottom>
             Mortgage Repayment Calculator
@@ -183,6 +225,72 @@ const LearnBetterLife = () => {
                 <Typography>Total amount paid over {term} years:</Typography>
                 <Typography variant="h6">${getReadableNumber(totalPaid)}</Typography>
               </Box>
+            </Box>
+          )}
+        </Box>
+
+        {/* ------------------------------ */}
+        {/* Offset Interest Saving          */}
+        {/* ------------------------------ */}
+        <Box mt={6}>
+          <Typography variant="h5" gutterBottom>
+            Offset Account – Interest Saved
+          </Typography>
+
+          <TextField
+            label="Loan Amount"
+            type="text"
+            fullWidth
+            margin="normal"
+            value={formatNumber(offsetLoan)}
+            onChange={(e) => {
+              const rawValue = parseNumber(e.target.value);
+              if (!/^\d*$/.test(rawValue)) return;
+              setOffsetLoan(rawValue);
+            }}
+          />
+
+          <TextField
+            label="Interest Rate (%)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={offsetInterest}
+            onChange={(e) => setOffsetInterest(e.target.value)}
+          />
+
+          <TextField
+            label="Loan Term (years)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={offsetTerm}
+            onChange={(e) => setOffsetTerm(e.target.value)}
+          />
+
+          <TextField
+            label="Offset Amount"
+            type="text"
+            fullWidth
+            margin="normal"
+            value={formatNumber(offsetAmount)}
+            onChange={(e) => {
+              const rawValue = parseNumber(e.target.value);
+              if (!/^\d*$/.test(rawValue)) return;
+              setOffsetAmount(rawValue);
+            }}
+          />
+
+          <Button variant="contained" fullWidth onClick={calculateOffsetSaving}>
+            Calculate Interest Saved
+          </Button>
+
+          {interestSaved !== null && (
+            <Box mt={2}>
+              <Typography>Total interest saved:</Typography>
+              <Typography variant="h6">
+                ${getReadableNumber(interestSaved)}
+              </Typography>
             </Box>
           )}
         </Box>
