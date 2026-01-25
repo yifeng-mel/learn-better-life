@@ -74,9 +74,6 @@ const LearnBetterLife = () => {
       </Script>
 
       <Container maxWidth="sm">
-        {/* ------------------------------ */}
-        {/* Stamp Duty Calculator          */}
-        {/* ------------------------------ */}
         <Box>
           <Typography variant="h5" gutterBottom>
             Stamp Duty Calculator
@@ -137,9 +134,6 @@ const LearnBetterLife = () => {
           )}
         </Box>
 
-        {/* ------------------------------ */}
-        {/* Mortgage Repayment Calculator  */}
-        {/* ------------------------------ */}
         <Box mt={6}>
           <Typography variant="h5" gutterBottom>
             Mortgage Repayment Calculator
@@ -183,15 +177,11 @@ const LearnBetterLife = () => {
           {repayment !== null && (
             <Box mt={2}>
               <Typography>Monthly repayment:</Typography>
-              <Typography variant="h6">
-                ${getReadableNumber(repayment)}
-              </Typography>
+              <Typography variant="h6">${getReadableNumber(repayment)}</Typography>
 
               <Box mt={1}>
                 <Typography>Total amount paid over {term} years:</Typography>
-                <Typography variant="h6">
-                  ${getReadableNumber(totalPaid)}
-                </Typography>
+                <Typography variant="h6">${getReadableNumber(totalPaid)}</Typography>
               </Box>
             </Box>
           )}
