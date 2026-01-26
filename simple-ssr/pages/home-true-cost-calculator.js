@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Head from "next/head";
 import { Container, TextField, Button, Typography, Box } from "@mui/material";
 import Script from "next/script";
 import { calculateRepayment } from "../lib/repayment-calculator";
 import { stampDutyCalculators } from "../lib/stamp-duty-calculator";
 import { calculateTotalInterestWithOffset } from "../lib/offset-mortgage-calculator";
+
+const STORAGE_KEY = "learnBetterLifeInputs";
+
 const LearnBetterLife = () => {
   // ------------------------------
   // Mortgage calculator
@@ -31,14 +34,71 @@ const LearnBetterLife = () => {
   const [offsetAmount, setOffsetAmount] = useState("");
   const [interestSaved, setInterestSaved] = useState(null);
 
+  // ------------------------------
+  // Load from localStorage (once)
+  // ------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+
+    try {
+      const data = JSON.parse(saved);
+
+      setLoanAmount(data.loanAmount ?? "");
+      setInterest(data.interest ?? 6.6);
+      setTerm(data.term ?? 30);
+
+      setHouseValue(data.houseValue ?? "");
+      setSelectedState(data.selectedState ?? "VIC");
+
+      setOffsetLoan(data.offsetLoan ?? "");
+      setOffsetInterest(data.offsetInterest ?? 6.6);
+      setOffsetTerm(data.offsetTerm ?? 30);
+      setOffsetAmount(data.offsetAmount ?? "");
+    } catch (e) {
+      console.error("Failed to load saved data", e);
+    }
+  }, []);
+
+  // ------------------------------
+  // Save to localStorage (on change)
+  // ------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const data = {
+      loanAmount,
+      interest,
+      term,
+      houseValue,
+      selectedState,
+      offsetLoan,
+      offsetInterest,
+      offsetTerm,
+      offsetAmount,
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [
+    loanAmount,
+    interest,
+    term,
+    houseValue,
+    selectedState,
+    offsetLoan,
+    offsetInterest,
+    offsetTerm,
+    offsetAmount,
+  ]);
+
   const formatNumber = (value) => {
     if (!value) return "";
     return Number(value).toLocaleString();
   };
 
-  const parseNumber = (value) => {
-    return value.replace(/,/g, "");
-  };
+  const parseNumber = (value) => value.replace(/,/g, "");
 
   const getReadableNumber = (num) => {
     if (!num && num !== 0) return "";
@@ -65,22 +125,14 @@ const LearnBetterLife = () => {
 
     const loan = Number(offsetLoan);
     const rate = Number(offsetInterest);
-    const term = Number(offsetTerm);
+    const years = Number(offsetTerm);
     const offset = Number(offsetAmount || 0);
 
-    // Normal loan (no offset)
-    const normal = calculateTotalInterestWithOffset(
-      loan,
-      rate,
-      term,
-      0
-    );
-
-    // Loan with offset
+    const normal = calculateTotalInterestWithOffset(loan, rate, years, 0);
     const withOffset = calculateTotalInterestWithOffset(
       loan,
       rate,
-      term,
+      years,
       offset
     );
 
@@ -91,7 +143,10 @@ const LearnBetterLife = () => {
     <>
       <Head>
         <title>Mortgage Repayment Calculator</title>
-        <meta name="description" content="Simple mortgage repayment calculator" />
+        <meta
+          name="description"
+          content="Mortgage, stamp duty and offset calculator"
+        />
       </Head>
 
       <Script
@@ -110,24 +165,18 @@ const LearnBetterLife = () => {
       </Script>
 
       <Container maxWidth="sm">
-        {/* ------------------------------ */}
-        {/* Stamp Duty Calculator          */}
-        {/* ------------------------------ */}
+        {/* Stamp Duty */}
         <Box>
-          <Typography variant="h5" gutterBottom>
-            Stamp Duty Calculator
-          </Typography>
+          <Typography variant="h5">Stamp Duty Calculator</Typography>
 
           <TextField
             label="House Value"
-            type="text"
             fullWidth
             margin="normal"
             value={formatNumber(houseValue)}
             onChange={(e) => {
-              const rawValue = parseNumber(e.target.value);
-              if (!/^\d*$/.test(rawValue)) return;
-              setHouseValue(rawValue);
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setHouseValue(raw);
             }}
           />
 
@@ -140,57 +189,48 @@ const LearnBetterLife = () => {
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
           >
-            <option value="VIC">Victoria (VIC)</option>
-            <option value="NSW">New South Wales (NSW)</option>
-            <option value="QLD">Queensland (QLD)</option>
-            <option value="WA">Western Australia (WA)</option>
-            <option value="SA">South Australia (SA)</option>
-            <option value="TAS">Tasmania (TAS)</option>
-            <option value="ACT">Australian Capital Territory (ACT)</option>
-            <option value="NT">Northern Territory (NT)</option>
+            <option value="VIC">Victoria</option>
+            <option value="NSW">New South Wales</option>
+            <option value="QLD">Queensland</option>
+            <option value="WA">Western Australia</option>
+            <option value="SA">South Australia</option>
+            <option value="TAS">Tasmania</option>
+            <option value="ACT">ACT</option>
+            <option value="NT">Northern Territory</option>
           </TextField>
 
           <Button
-            variant="contained"
             fullWidth
+            variant="contained"
             onClick={() => {
               if (!houseValue) return;
-              const calculator = stampDutyCalculators[selectedState];
-              if (!calculator) return;
-              setStampDuty(calculator(Number(houseValue)));
+              setStampDuty(
+                stampDutyCalculators[selectedState](Number(houseValue))
+              );
             }}
           >
             Calculate Stamp Duty
           </Button>
 
           {stampDuty !== null && (
-            <Box mt={2}>
-              <Typography>Estimated stamp duty:</Typography>
-              <Typography variant="h6">
-                ${getReadableNumber(stampDuty)}
-              </Typography>
-            </Box>
+            <Typography mt={2} variant="h6">
+              ${getReadableNumber(stampDuty)}
+            </Typography>
           )}
         </Box>
 
-        {/* ------------------------------ */}
-        {/* Mortgage Repayment Calculator  */}
-        {/* ------------------------------ */}
+        {/* Mortgage */}
         <Box mt={6}>
-          <Typography variant="h5" gutterBottom>
-            Mortgage Repayment Calculator
-          </Typography>
+          <Typography variant="h5">Mortgage Repayment</Typography>
 
           <TextField
             label="Loan Amount"
-            type="text"
             fullWidth
             margin="normal"
             value={formatNumber(loanAmount)}
             onChange={(e) => {
-              const rawValue = parseNumber(e.target.value);
-              if (!/^\d*$/.test(rawValue)) return;
-              setLoanAmount(rawValue);
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setLoanAmount(raw);
             }}
           />
 
@@ -212,41 +252,32 @@ const LearnBetterLife = () => {
             onChange={(e) => setTerm(e.target.value)}
           />
 
-          <Button variant="contained" fullWidth onClick={calculate}>
+          <Button fullWidth variant="contained" onClick={calculate}>
             Calculate
           </Button>
 
-          {repayment !== null && (
+          {repayment && (
             <Box mt={2}>
-              <Typography>Monthly repayment:</Typography>
-              <Typography variant="h6">${getReadableNumber(repayment)}</Typography>
-
-              <Box mt={1}>
-                <Typography>Total amount paid over {term} years:</Typography>
-                <Typography variant="h6">${getReadableNumber(totalPaid)}</Typography>
-              </Box>
+              <Typography>Monthly: ${getReadableNumber(repayment)}</Typography>
+              <Typography>
+                Total paid: ${getReadableNumber(totalPaid)}
+              </Typography>
             </Box>
           )}
         </Box>
 
-        {/* ------------------------------ */}
-        {/* Offset Interest Saving          */}
-        {/* ------------------------------ */}
+        {/* Offset */}
         <Box mt={6}>
-          <Typography variant="h5" gutterBottom>
-            Offset Account – Interest Saved
-          </Typography>
+          <Typography variant="h5">Offset – Interest Saved</Typography>
 
           <TextField
             label="Loan Amount"
-            type="text"
             fullWidth
             margin="normal"
             value={formatNumber(offsetLoan)}
             onChange={(e) => {
-              const rawValue = parseNumber(e.target.value);
-              if (!/^\d*$/.test(rawValue)) return;
-              setOffsetLoan(rawValue);
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setOffsetLoan(raw);
             }}
           />
 
@@ -270,28 +301,27 @@ const LearnBetterLife = () => {
 
           <TextField
             label="Offset Amount"
-            type="text"
             fullWidth
             margin="normal"
             value={formatNumber(offsetAmount)}
             onChange={(e) => {
-              const rawValue = parseNumber(e.target.value);
-              if (!/^\d*$/.test(rawValue)) return;
-              setOffsetAmount(rawValue);
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setOffsetAmount(raw);
             }}
           />
 
-          <Button variant="contained" fullWidth onClick={calculateOffsetSaving}>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={calculateOffsetSaving}
+          >
             Calculate Interest Saved
           </Button>
 
           {interestSaved !== null && (
-            <Box mt={2}>
-              <Typography>Total interest saved:</Typography>
-              <Typography variant="h6">
-                ${getReadableNumber(interestSaved)}
-              </Typography>
-            </Box>
+            <Typography mt={2} variant="h6">
+              ${getReadableNumber(interestSaved)}
+            </Typography>
           )}
         </Box>
       </Container>
