@@ -1,348 +1,332 @@
-import React, { useState } from "react";
-import Head from 'next/head'
-import TextField from '@mui/material/TextField';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Script from 'next/script';
-import { Container, FormLabel, InputLabel, Typography } from "@mui/material";
-import Grid from '@mui/material/Grid';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import React, { useState, useEffect } from "react";
+import Head from "next/head";
+import { Container, TextField, Button, Typography, Box } from "@mui/material";
+import Script from "next/script";
+import { calculateRepayment } from "../lib/repayment-calculator";
+import { stampDutyCalculators } from "../lib/stamp-duty-calculator";
+import { calculateTotalInterestWithOffset } from "../lib/offset-mortgage-calculator";
 
-const LearnBetterLife = ({ result }) => {
-  const [houseValue, setHouseValue] = useState();
-  const [lvr, setLvr] = useState(80);
-  const [loanAmount, setLoanAmount] = useState();
-  const [displayLoanAmount, setDisplayLoanAmount] = useState();
-  const [isCustomLoanAmount, setIsCustomLoanAmount] = useState();
+const STORAGE_KEY = "learnBetterLifeInputs";
+
+const LearnBetterLife = () => {
+  // ------------------------------
+  // Mortgage calculator
+  // ------------------------------
+  const [loanAmount, setLoanAmount] = useState("");
   const [interest, setInterest] = useState(6.6);
   const [term, setTerm] = useState(30);
-  const [downPayment, setDownPayment] = useState();
-  const [stampDuty, setStampDuty] = useState();
-  const [repayment, setRepayment] = useState();
-  const [mySalary, setMySalary] = useState();
-  const [partnerSalary, setPartnerySalary] = useState();
-  const [netIncome, setNetIncome] = useState();
+  const [repayment, setRepayment] = useState(null);
+  const [totalPaid, setTotalPaid] = useState(null);
 
-  const getReadableNumber = (inputNumber) => {
-    return inputNumber ? parseFloat(inputNumber.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''
-  }
+  // ------------------------------
+  // Stamp duty calculator
+  // ------------------------------
+  const [houseValue, setHouseValue] = useState("");
+  const [selectedState, setSelectedState] = useState("VIC");
+  const [stampDuty, setStampDuty] = useState(null);
 
-  const calRepayment = () => {
-    const localLoanAmount = isCustomLoanAmount ? loanAmount : displayLoanAmount
+  // ------------------------------
+  // Offset interest saving
+  // ------------------------------
+  const [offsetLoan, setOffsetLoan] = useState("");
+  const [offsetInterest, setOffsetInterest] = useState(6.6);
+  const [offsetTerm, setOffsetTerm] = useState(30);
+  const [offsetAmount, setOffsetAmount] = useState("");
+  const [interestSaved, setInterestSaved] = useState(null);
 
-    const monthlyRate = interest / 100 / 12
-    const numberOfPayments = term * 12
+  // ------------------------------
+  // Load from localStorage (once)
+  // ------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-    const top = localLoanAmount * monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)
-    const bottom = Math.pow(1 + monthlyRate, numberOfPayments) - 1
-    const result = Math.round(top / bottom)
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
 
-    setRepayment(result)
-  }
+    try {
+      const data = JSON.parse(saved);
 
-  const calNetIncome = () => {
-    let netIncome = 0
-    if (mySalary) {
-      netIncome += calMonNetIncome(mySalary)
+      setLoanAmount(data.loanAmount ?? "");
+      setInterest(data.interest ?? 6.6);
+      setTerm(data.term ?? 30);
+
+      setHouseValue(data.houseValue ?? "");
+      setSelectedState(data.selectedState ?? "VIC");
+
+      setOffsetLoan(data.offsetLoan ?? "");
+      setOffsetInterest(data.offsetInterest ?? 6.6);
+      setOffsetTerm(data.offsetTerm ?? 30);
+      setOffsetAmount(data.offsetAmount ?? "");
+    } catch (e) {
+      console.error("Failed to load saved data", e);
     }
-    if (partnerSalary) {
-      netIncome += calMonNetIncome(partnerSalary)
-    }
+  }, []);
 
-    setNetIncome(netIncome)
-  }
+  // ------------------------------
+  // Save to localStorage (on change)
+  // ------------------------------
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-  const calTax = (annualSalary) => {
-    let taxInCent = 0
+    const data = {
+      loanAmount,
+      interest,
+      term,
+      houseValue,
+      selectedState,
+      offsetLoan,
+      offsetInterest,
+      offsetTerm,
+      offsetAmount,
+    };
 
-    if (annualSalary <= 18200) {
-      return 0
-    } else if (annualSalary <= 45000) {
-      const taxable = annualSalary - 18200
-      taxInCent = taxable * 19
-    } else if (annualSalary <= 120000) {
-      const taxable = annualSalary - 45000
-      taxInCent = 5092 * 100 + taxable * 32.5
-    } else if (annualSalary <= 180000) {
-      const taxable = annualSalary - 120000
-      taxInCent = 29467 * 100 + taxable * 37
-    } else {
-      const taxable = annualSalary - 180000
-      taxInCent = 51667 * 100 + taxable * 45
-    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }, [
+    loanAmount,
+    interest,
+    term,
+    houseValue,
+    selectedState,
+    offsetLoan,
+    offsetInterest,
+    offsetTerm,
+    offsetAmount,
+  ]);
 
-    return taxInCent / 100
-  }
+  const formatNumber = (value) => {
+    if (!value) return "";
+    return Number(value).toLocaleString();
+  };
 
-  const calMonNetIncome = (annualSalary) => {
-    if (annualSalary < 23365 && !partnerSalary) {
-      return (annualSalary - calTax(annualSalary)) / 12
-    }
+  const parseNumber = (value) => value.replace(/,/g, "");
 
-    return (annualSalary - calTax(annualSalary) - annualSalary * 0.02) / 12
-  }
-
-  const calDisplayLoanAmount = (houseValue, lvr) => {
-    setDisplayLoanAmount(houseValue * lvr / 100)
-  }
-
-  const calDownPayment = () => {
-    if (houseValue !== '' && houseValue !== undefined && lvr !== '' && lvr !== undefined) {
-      setDownPayment(houseValue * (100 - lvr) / 100)
-    }
-  }
-
-  const calStampDuty = () => {
-    setStampDuty(getStampDuty())
-  }
-
-  const getStampDuty = () => {
-    if (houseValue < 25000) {
-      return houseValue * 1.4
-    } else if (houseValue >= 25000 && houseValue < 130000) {
-      return 350 + ((houseValue - 25000) * 2.4 / 100)
-    } else if (houseValue >= 130000 && houseValue < 960000) {
-      return 2870 + ( (houseValue - 130000) * 6 / 100 )
-    } else if (houseValue >= 960000 && houseValue < 2000000) {
-      return houseValue * 5.5 / 100
-    } else {
-      return 110000 + ((houseValue - 2000000) * 6.5 / 100)
-    }
-  }
+  const getReadableNumber = (num) => {
+    if (!num && num !== 0) return "";
+    return num.toLocaleString(undefined, {
+      maximumFractionDigits: 2,
+    });
+  };
 
   const calculate = () => {
-    setDownPayment(undefined)
-    setStampDuty(undefined)
-    calDownPayment()
-    calStampDuty()
-    calRepayment()
-    calNetIncome()
-  }
+    if (!loanAmount || !interest || !term) return;
+
+    const monthlyRepayment = calculateRepayment(
+      Number(loanAmount),
+      Number(interest),
+      Number(term)
+    );
+
+    setRepayment(monthlyRepayment);
+    setTotalPaid(monthlyRepayment * Number(term) * 12);
+  };
+
+  const calculateOffsetSaving = () => {
+    if (!offsetLoan || !offsetInterest || !offsetTerm) return;
+
+    const loan = Number(offsetLoan);
+    const rate = Number(offsetInterest);
+    const years = Number(offsetTerm);
+    const offset = Number(offsetAmount || 0);
+
+    const normal = calculateTotalInterestWithOffset(loan, rate, years, 0);
+    const withOffset = calculateTotalInterestWithOffset(
+      loan,
+      rate,
+      years,
+      offset
+    );
+
+    setInterestSaved(normal.totalInterest - withOffset.totalInterest);
+  };
 
   return (
-    <div>
+    <>
       <Head>
-        <title>Mortgage repayment calculator</title>
-        <meta name="viewport" content="initial-scale=1.0, width=device-width" />
-        <meta name="description" content="Learn to live a better life! Let's start with knowing our mortage and salary better." />
+        <title>Mortgage Repayment Calculator</title>
+        <meta
+          name="description"
+          content="Mortgage, stamp duty and offset calculator"
+        />
       </Head>
-      <Script strategy="lazyOnload" src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`} />
 
+      <Script
+        strategy="lazyOnload"
+        src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`}
+      />
       <Script strategy="lazyOnload">
         {`
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}', {
-        page_path: window.location.pathname,
-        });
-    `}
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}', {
+            page_path: window.location.pathname,
+          });
+        `}
       </Script>
-      <div>
-        <Container>
-          <Box sx={{ flexGrow: 1 }}>
-            <Grid container
-              spacing={2}
-              direction="column"
-              justifyContent="center"
-              // style={{ minHeight: '100vh' }}
-            >
-              <Grid item xs={12} sm={12} md={4}>
-                <Typography variant="h6" component="div" gutterBottom>
-                  Mortgage and Salary Calculator (Australia)
-                </Typography>
-              </Grid>
-              <Grid item xs={12} sm={12} md={4}>
-                <TextField
-                  disabled = {isCustomLoanAmount ? true : false}
-                  fullWidth
-                  required
-                  id="filled-number"
-                  label="House Value"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => {
-                    if (e.target.value === '') {
-                      setIsCustomLoanAmount(true)
-                    } else {
-                      setIsCustomLoanAmount(false)
-                      calDisplayLoanAmount(e.target.value, lvr)
-                    }
 
-                    setHouseValue(e.target.value)
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} md={4}>
-                <TextField
-                  disabled = {isCustomLoanAmount ? true : false}
-                  defaultValue={80}
-                  fullWidth
-                  required
-                  id="filled-number"
-                  label="Loan to Value Ratio (%)"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => setLvr(e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} md={4}>
-                {
-                  isCustomLoanAmount === undefined || isCustomLoanAmount === true ? 
-                  <TextField
-                    fullWidth
-                    required
-                    id="filled-number"
-                    label="Principal Loan Amount"
-                    type="number"
-                    InputLabelProps={{
-                      shrink: true,
-                    }}
-                    variant="standard"
-                    onChange={e => {
-                      if (e.target.value === '') {
-                        setIsCustomLoanAmount(false)
-                      } else {
-                        setIsCustomLoanAmount(true)
-                      }
+      <Container maxWidth="sm">
+        {/* Stamp Duty */}
+        <Box>
+          <Typography variant="h5">Stamp Duty Calculator</Typography>
 
-                      setLoanAmount(e.target.value)
-                    }}
-                  /> : 
-                  <div>
-                    <InputLabel shrink={true}>Principal Loan Amount</InputLabel>
-                    <Typography color="body1" component="span">
-                      {getReadableNumber(displayLoanAmount)}
-                    </Typography>
-                  </div>
-                }
-              </Grid>
-              <Grid item xs={12} sm={12} md={4}>
-                <TextField
-                  defaultValue={6.6}
-                  fullWidth
-                  required
-                  id="filled-number"
-                  label="Annual Interest Rate"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => setInterest(e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} md={4}>
-                <TextField
-                  defaultValue={30}
-                  required
-                  fullWidth
-                  id="filled-number"
-                  label="Term(years)"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => setTerm(e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} md={6}>
-                <TextField
-                  required
-                  fullWidth
-                  id="filled-number"
-                  label="My Annual Income"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => setMySalary(e.target.value)}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12} md={6}>
-                <TextField
-                  fullWidth
-                  id="filled-number"
-                  label="Partner Annual Income (optional)"
-                  type="number"
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                  variant="standard"
-                  onChange={e => setPartnerySalary(e.target.value)}
-                />
-              </Grid>
-              <Grid item container
-                direction="column"
-                alignItems="center"
-                justify="center"
-              >
-                <Grid style={{ width: '100%' }}>
-                  <Button variant="contained" onClick={calculate} style={{ width: '100%' }}>Calculate</Button>
+          <TextField
+            label="House Value"
+            fullWidth
+            margin="normal"
+            value={formatNumber(houseValue)}
+            onChange={(e) => {
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setHouseValue(raw);
+            }}
+          />
 
-                </Grid>
-                <Grid sx={{ mt: 1.5, minWidth: 300 }} style={{ width: '100%' }}>
-                  <Card variant="outlined">
-                    <CardContent>
-                    <div>
-                        <Typography color="text.secondary" component="span">
-                          Upfront Cost (Down Payment + Stamp Duty): &nbsp;
-                          
-                        </Typography>
-                        <Typography variant="body1" component="span">
-                          {downPayment === undefined ? <div></div> : <div>{getReadableNumber(downPayment)} + {getReadableNumber(stampDuty)} = {getReadableNumber(downPayment + stampDuty)}</div>}
-                        </Typography>
-                      </div>
-                      <div>
-                        <Typography color="text.secondary" component="span">
-                          Monthly Repayment: &nbsp;
-                        </Typography>
-                        <Typography variant="body1" component="span">
-                          {repayment ? parseFloat(repayment.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-                        </Typography>
-                      </div>
-                      <div>
-                        <Typography color="text.secondary" component="span">
-                          Monthly Net Income: &nbsp;
-                        </Typography>
-                        <Typography variant="body1" component="span">
-                          {netIncome ? parseFloat(netIncome.toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-                        </Typography>
-                      </div>
-                      <div>
-                        <Typography color="text.secondary" component="span">
-                          Monthly Balance: &nbsp;
-                        </Typography>
-                        <Typography variant="body1" component="span">
-                          {repayment && netIncome ? parseFloat((netIncome - repayment).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-                        </Typography>
-                      </div>
-                      <div>
-                        <Typography color="text.secondary" component="span">
-                          Total Payment: &nbsp;
-                        </Typography>
-                        <Typography variant="body1" component="span">
-                          {repayment ? parseFloat((repayment * term * 12).toFixed(2)).toLocaleString(undefined, { maximumFractionDigits: 2 }) : ''}
-                        </Typography>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Box>
-        </Container>
-      </div>
-    </div >
+          <TextField
+            label="State"
+            select
+            fullWidth
+            margin="normal"
+            SelectProps={{ native: true }}
+            value={selectedState}
+            onChange={(e) => setSelectedState(e.target.value)}
+          >
+            <option value="VIC">Victoria</option>
+            <option value="NSW">New South Wales</option>
+            <option value="QLD">Queensland</option>
+            <option value="WA">Western Australia</option>
+            <option value="SA">South Australia</option>
+            <option value="TAS">Tasmania</option>
+            <option value="ACT">ACT</option>
+            <option value="NT">Northern Territory</option>
+          </TextField>
+
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              if (!houseValue) return;
+              setStampDuty(
+                stampDutyCalculators[selectedState](Number(houseValue))
+              );
+            }}
+          >
+            Calculate Stamp Duty
+          </Button>
+
+          {stampDuty !== null && (
+            <Typography mt={2} variant="h6">
+              ${getReadableNumber(stampDuty)}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Mortgage */}
+        <Box mt={6}>
+          <Typography variant="h5">Mortgage Repayment</Typography>
+
+          <TextField
+            label="Loan Amount"
+            fullWidth
+            margin="normal"
+            value={formatNumber(loanAmount)}
+            onChange={(e) => {
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setLoanAmount(raw);
+            }}
+          />
+
+          <TextField
+            label="Interest Rate (%)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={interest}
+            onChange={(e) => setInterest(e.target.value)}
+          />
+
+          <TextField
+            label="Loan Term (years)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+          />
+
+          <Button fullWidth variant="contained" onClick={calculate}>
+            Calculate
+          </Button>
+
+          {repayment && (
+            <Box mt={2}>
+              <Typography>Monthly: ${getReadableNumber(repayment)}</Typography>
+              <Typography>
+                Total paid: ${getReadableNumber(totalPaid)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Offset */}
+        <Box mt={6}>
+          <Typography variant="h5">Offset – Interest Saved</Typography>
+
+          <TextField
+            label="Loan Amount"
+            fullWidth
+            margin="normal"
+            value={formatNumber(offsetLoan)}
+            onChange={(e) => {
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setOffsetLoan(raw);
+            }}
+          />
+
+          <TextField
+            label="Interest Rate (%)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={offsetInterest}
+            onChange={(e) => setOffsetInterest(e.target.value)}
+          />
+
+          <TextField
+            label="Loan Term (years)"
+            type="number"
+            fullWidth
+            margin="normal"
+            value={offsetTerm}
+            onChange={(e) => setOffsetTerm(e.target.value)}
+          />
+
+          <TextField
+            label="Offset Amount"
+            fullWidth
+            margin="normal"
+            value={formatNumber(offsetAmount)}
+            onChange={(e) => {
+              const raw = parseNumber(e.target.value);
+              if (/^\d*$/.test(raw)) setOffsetAmount(raw);
+            }}
+          />
+
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={calculateOffsetSaving}
+          >
+            Calculate Interest Saved
+          </Button>
+
+          {interestSaved !== null && (
+            <Typography mt={2} variant="h6">
+              ${getReadableNumber(interestSaved)}
+            </Typography>
+          )}
+        </Box>
+      </Container>
+    </>
   );
 };
+
 export default LearnBetterLife;
