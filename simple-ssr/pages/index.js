@@ -7,6 +7,7 @@ import { stampDutyCalculators } from "../lib/stamp-duty-calculator";
 import { calculateTotalInterestWithOffset } from "../lib/offset-mortgage-calculator";
 
 const STORAGE_KEY = "learnBetterLifeInputs";
+const CANONICAL_URL = "https://www.learnbetterlife.com.au/mortgage-calculator";
 
 const LearnBetterLife = () => {
   // ------------------------------
@@ -35,52 +36,43 @@ const LearnBetterLife = () => {
   const [interestSaved, setInterestSaved] = useState(null);
 
   // ------------------------------
-  // Load from localStorage (once)
+  // Local storage
   // ------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const saved = localStorage.getItem(STORAGE_KEY);
     if (!saved) return;
 
     try {
-      const data = JSON.parse(saved);
-
-      setLoanAmount(data.loanAmount ?? "");
-      setInterest(data.interest ?? 6.6);
-      setTerm(data.term ?? 30);
-
-      setHouseValue(data.houseValue ?? "");
-      setSelectedState(data.selectedState ?? "VIC");
-
-      setOffsetLoan(data.offsetLoan ?? "");
-      setOffsetInterest(data.offsetInterest ?? 6.6);
-      setOffsetTerm(data.offsetTerm ?? 30);
-      setOffsetAmount(data.offsetAmount ?? "");
-    } catch (e) {
-      console.error("Failed to load saved data", e);
-    }
+      const d = JSON.parse(saved);
+      setLoanAmount(d.loanAmount ?? "");
+      setInterest(d.interest ?? 6.6);
+      setTerm(d.term ?? 30);
+      setHouseValue(d.houseValue ?? "");
+      setSelectedState(d.selectedState ?? "VIC");
+      setOffsetLoan(d.offsetLoan ?? "");
+      setOffsetInterest(d.offsetInterest ?? 6.6);
+      setOffsetTerm(d.offsetTerm ?? 30);
+      setOffsetAmount(d.offsetAmount ?? "");
+    } catch { }
   }, []);
 
-  // ------------------------------
-  // Save to localStorage (on change)
-  // ------------------------------
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const data = {
-      loanAmount,
-      interest,
-      term,
-      houseValue,
-      selectedState,
-      offsetLoan,
-      offsetInterest,
-      offsetTerm,
-      offsetAmount,
-    };
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        loanAmount,
+        interest,
+        term,
+        houseValue,
+        selectedState,
+        offsetLoan,
+        offsetInterest,
+        offsetTerm,
+        offsetAmount,
+      })
+    );
   }, [
     loanAmount,
     interest,
@@ -93,47 +85,43 @@ const LearnBetterLife = () => {
     offsetAmount,
   ]);
 
-  const formatNumber = (value) => {
-    if (!value) return "";
-    return Number(value).toLocaleString();
-  };
+  // ------------------------------
+  // Helpers
+  // ------------------------------
+  const format = (v) => (v ? Number(v).toLocaleString() : "");
+  const parse = (v) => v.replace(/,/g, "");
+  const readable = (n) =>
+    n?.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
-  const parseNumber = (value) => value.replace(/,/g, "");
-
-  const getReadableNumber = (num) => {
-    if (!num && num !== 0) return "";
-    return num.toLocaleString(undefined, {
-      maximumFractionDigits: 2,
-    });
-  };
-
-  const calculate = () => {
+  // ------------------------------
+  // Calculations
+  // ------------------------------
+  const calculateMortgage = () => {
     if (!loanAmount || !interest || !term) return;
-
-    const monthlyRepayment = calculateRepayment(
+    const monthly = calculateRepayment(
       Number(loanAmount),
       Number(interest),
       Number(term)
     );
-
-    setRepayment(monthlyRepayment);
-    setTotalPaid(monthlyRepayment * Number(term) * 12);
+    setRepayment(monthly);
+    setTotalPaid(monthly * term * 12);
   };
 
   const calculateOffsetSaving = () => {
     if (!offsetLoan || !offsetInterest || !offsetTerm) return;
 
-    const loan = Number(offsetLoan);
-    const rate = Number(offsetInterest);
-    const years = Number(offsetTerm);
-    const offset = Number(offsetAmount || 0);
+    const normal = calculateTotalInterestWithOffset(
+      Number(offsetLoan),
+      Number(offsetInterest),
+      Number(offsetTerm),
+      0
+    );
 
-    const normal = calculateTotalInterestWithOffset(loan, rate, years, 0);
     const withOffset = calculateTotalInterestWithOffset(
-      loan,
-      rate,
-      years,
-      offset
+      Number(offsetLoan),
+      Number(offsetInterest),
+      Number(offsetTerm),
+      Number(offsetAmount || 0)
     );
 
     setInterestSaved(normal.totalInterest - withOffset.totalInterest);
@@ -142,13 +130,81 @@ const LearnBetterLife = () => {
   return (
     <>
       <Head>
-        <title>Mortgage Repayment Calculator</title>
+        <title>
+          Mortgage Repayment Calculator Australia | Stamp Duty & Offset Savings
+        </title>
+
         <meta
           name="description"
-          content="Mortgage, stamp duty and offset calculator"
+          content="Free Australian mortgage calculator. Calculate home loan repayments, stamp duty by state, and interest savings using an offset account."
+        />
+
+        <meta
+          name="keywords"
+          content="mortgage calculator Australia, home loan repayment calculator, stamp duty calculator, offset account savings"
+        />
+
+        <link rel="canonical" href={CANONICAL_URL} />
+
+        {/* Open Graph */}
+        <meta property="og:title" content="Mortgage Calculator Australia" />
+        <meta
+          property="og:description"
+          content="Calculate mortgage repayments, stamp duty and offset account savings for Australian home loans."
+        />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={CANONICAL_URL} />
+
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Mortgage Calculator Australia" />
+        <meta
+          name="twitter:description"
+          content="Mortgage repayment, stamp duty and offset savings calculator."
+        />
+
+        {/* FAQ Schema */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "How is mortgage repayment calculated in Australia?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text:
+                      "Mortgage repayments are calculated using loan amount, interest rate and loan term. This calculator uses standard amortisation with monthly repayments.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "What is stamp duty and how is it calculated?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text:
+                      "Stamp duty is a government tax on property purchases. The amount depends on the property price and the state or territory where the property is located.",
+                  },
+                },
+                {
+                  "@type": "Question",
+                  name: "How does an offset account reduce interest?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text:
+                      "Money in an offset account reduces the effective loan balance used to calculate interest, which can significantly reduce total interest paid over the life of the loan.",
+                  },
+                },
+              ],
+            }),
+          }}
         />
       </Head>
 
+      {/* Google Analytics */}
       <Script
         strategy="lazyOnload"
         src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}`}
@@ -158,24 +214,51 @@ const LearnBetterLife = () => {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}', {
-            page_path: window.location.pathname,
-          });
+          gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}');
         `}
       </Script>
 
       <Container maxWidth="sm">
+        {/* ------------------------------ */}
+        {/* SEO Header (User-friendly)     */}
+        {/* ------------------------------ */}
+        <Box mb={4}>
+          <Typography
+            variant="h4"
+            component="h1"
+            gutterBottom
+            sx={{ fontWeight: 600 }}
+          >
+            Mortgage Calculator Australia
+          </Typography>
+
+          <Box
+            sx={{
+              backgroundColor: "#f7f7f7",
+              borderRadius: 2,
+              padding: 2,
+              color: "text.secondary",
+            }}
+          >
+            <Typography variant="body2">
+              Calculate your home loan repayments, stamp duty costs, and how much
+              interest you can save with an offset account. Designed for Australian
+              home buyers to make smarter property decisions.
+            </Typography>
+          </Box>
+        </Box>
+
         {/* Stamp Duty */}
-        <Box>
+        <Box mt={5}>
           <Typography variant="h5">Stamp Duty Calculator</Typography>
 
           <TextField
-            label="House Value"
+            label="Property Price"
             fullWidth
             margin="normal"
-            value={formatNumber(houseValue)}
+            value={format(houseValue)}
             onChange={(e) => {
-              const raw = parseNumber(e.target.value);
+              const raw = parse(e.target.value);
               if (/^\d*$/.test(raw)) setHouseValue(raw);
             }}
           />
@@ -189,47 +272,43 @@ const LearnBetterLife = () => {
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
           >
-            <option value="VIC">Victoria</option>
-            <option value="NSW">New South Wales</option>
-            <option value="QLD">Queensland</option>
-            <option value="WA">Western Australia</option>
-            <option value="SA">South Australia</option>
-            <option value="TAS">Tasmania</option>
-            <option value="ACT">ACT</option>
-            <option value="NT">Northern Territory</option>
+            {Object.keys(stampDutyCalculators).map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </TextField>
 
           <Button
             fullWidth
             variant="contained"
-            onClick={() => {
-              if (!houseValue) return;
+            onClick={() =>
               setStampDuty(
                 stampDutyCalculators[selectedState](Number(houseValue))
-              );
-            }}
+              )
+            }
           >
             Calculate Stamp Duty
           </Button>
 
           {stampDuty !== null && (
             <Typography mt={2} variant="h6">
-              ${getReadableNumber(stampDuty)}
+              ${readable(stampDuty)}
             </Typography>
           )}
         </Box>
 
         {/* Mortgage */}
         <Box mt={6}>
-          <Typography variant="h5">Mortgage Repayment</Typography>
+          <Typography variant="h5">Mortgage Repayment Calculator</Typography>
 
           <TextField
             label="Loan Amount"
             fullWidth
             margin="normal"
-            value={formatNumber(loanAmount)}
+            value={format(loanAmount)}
             onChange={(e) => {
-              const raw = parseNumber(e.target.value);
+              const raw = parse(e.target.value);
               if (/^\d*$/.test(raw)) setLoanAmount(raw);
             }}
           />
@@ -252,31 +331,29 @@ const LearnBetterLife = () => {
             onChange={(e) => setTerm(e.target.value)}
           />
 
-          <Button fullWidth variant="contained" onClick={calculate}>
-            Calculate
+          <Button fullWidth variant="contained" onClick={calculateMortgage}>
+            Calculate Repayment
           </Button>
 
           {repayment && (
             <Box mt={2}>
-              <Typography>Monthly: ${getReadableNumber(repayment)}</Typography>
-              <Typography>
-                Total paid: ${getReadableNumber(totalPaid)}
-              </Typography>
+              <Typography>Monthly: ${readable(repayment)}</Typography>
+              <Typography>Total paid: ${readable(totalPaid)}</Typography>
             </Box>
           )}
         </Box>
 
         {/* Offset */}
-        <Box mt={6}>
-          <Typography variant="h5">Offset – Interest Saved</Typography>
+        <Box mt={6} mb={8}>
+          <Typography variant="h5">Offset Account Savings</Typography>
 
           <TextField
             label="Loan Amount"
             fullWidth
             margin="normal"
-            value={formatNumber(offsetLoan)}
+            value={format(offsetLoan)}
             onChange={(e) => {
-              const raw = parseNumber(e.target.value);
+              const raw = parse(e.target.value);
               if (/^\d*$/.test(raw)) setOffsetLoan(raw);
             }}
           />
@@ -300,12 +377,12 @@ const LearnBetterLife = () => {
           />
 
           <TextField
-            label="Offset Amount"
+            label="Offset Balance"
             fullWidth
             margin="normal"
-            value={formatNumber(offsetAmount)}
+            value={format(offsetAmount)}
             onChange={(e) => {
-              const raw = parseNumber(e.target.value);
+              const raw = parse(e.target.value);
               if (/^\d*$/.test(raw)) setOffsetAmount(raw);
             }}
           />
@@ -320,7 +397,7 @@ const LearnBetterLife = () => {
 
           {interestSaved !== null && (
             <Typography mt={2} variant="h6">
-              ${getReadableNumber(interestSaved)}
+              ${readable(interestSaved)}
             </Typography>
           )}
         </Box>
