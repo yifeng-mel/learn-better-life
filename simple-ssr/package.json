@@ -13,10 +13,13 @@
     "@turf/turf": "^6.5.0",
     "dayjs": "^1.11.13",
     "express": "4.17.1",
+    "leaflet": "^1.9.4",
+    "leaflet-rotatedmarker": "^0.2.0",
     "next": "^12.2.2",
     "nosleep.js": "^0.12.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-leaflet": "^3.2.5",
     "react-scripts": "5.0.0"
   },
   "scripts": {
