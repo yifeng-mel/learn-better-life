@@ -32,6 +32,7 @@ export default function WhereIsMyBus() {
   const [routeCoords, setRouteCoords] = useState([])
   const [customIcon, setCustomIcon] = useState(null)
   const [busIcon, setBusIcon] = useState(null)
+  const [myLocationIcon, setMyLocationIcon] = useState(null)
   const [currentPosition, setCurrentPosition] = useState(null)
   const [buses, setBuses] = useState([]) // 测试公交车数据
 
@@ -49,7 +50,7 @@ export default function WhereIsMyBus() {
       import('leaflet-rotatedmarker').then(() => {
 
         const stopMarker = L.icon({
-          iconUrl: '/marker-icon.png',
+          iconUrl: '/marker-icon.svg',
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
@@ -59,12 +60,21 @@ export default function WhereIsMyBus() {
 
         const busMarker = L.icon({
           iconUrl: '/bus.svg',
-          iconSize: [30, 30],
-          iconAnchor: [15, 15],
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
           popupAnchor: [0, -10],
           shadowUrl: null,
         })
         setBusIcon(busMarker)
+
+        const myLocationIcon = L.icon({
+          iconUrl: '/my-location.svg',
+          iconSize: [20, 20],
+          iconAnchor: [10, 10],
+          popupAnchor: [0, -10],
+          shadowUrl: null,
+        })
+        setMyLocationIcon(myLocationIcon)
       })
     })
 
@@ -157,7 +167,7 @@ export default function WhereIsMyBus() {
         {currentPosition && (
           <Marker
             position={currentPosition}
-            icon={customIcon}
+            icon={myLocationIcon}
           >
             <Popup>
               <b>你的位置</b>
