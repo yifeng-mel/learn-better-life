@@ -33,10 +33,6 @@ const Popup = dynamic(
   () => import('react-leaflet').then(mod => mod.Popup),
   { ssr: false }
 )
-const useMap = dynamic(
-  () => import('react-leaflet').then(mod => mod.useMap),
-  { ssr: false }
-)
 
 // ====== 自动居中组件 ======
 function RecenterMap({ position }) {
@@ -53,9 +49,7 @@ function RecenterMap({ position }) {
 
 export default function WhereIsMyBus() {
 
-  // ====== 当前选中的线路 ======
   const [selectedRoute, setSelectedRoute] = useState(null)
-
   const [routeCoords, setRouteCoords] = useState([])
   const [stops, setStops] = useState([])
   const [routeInfo, setRouteInfo] = useState(null)
@@ -167,31 +161,54 @@ export default function WhereIsMyBus() {
   if (!myLocationIcon) return null
 
   return (
-    <div style={{ height: '90vh', width: '100%' }}>
+    <div style={{ height: '90vh', width: '100%', position: 'relative' }}>
 
-      {/* ====== 路线选择 UI ====== */}
+      {/* ====== Enhanced Route Selector UI ====== */}
       <div style={{
         position: 'absolute',
+        top: 20,
+        right: 20,
         zIndex: 1000,
-        background: 'white',
-        padding: 10,
-        margin: 10,
-        borderRadius: 8,
-        boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
+        backdropFilter: 'blur(12px)',
+        background: 'rgba(255,255,255,0.9)',
+        padding: '14px 16px',
+        borderRadius: 14,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
+        minWidth: 180,
+        fontFamily: 'system-ui, sans-serif'
       }}>
+        <div style={{
+          fontSize: 13,
+          fontWeight: 600,
+          marginBottom: 8,
+          color: '#444',
+          letterSpacing: 0.5
+        }}>
+          Select Route
+        </div>
+
         <select
           value={selectedRoute || ''}
           onChange={e =>
             setSelectedRoute(e.target.value || null)
           }
+          style={{
+            width: '100%',
+            padding: '8px 10px',
+            borderRadius: 10,
+            border: '1px solid #ddd',
+            fontSize: 14,
+            cursor: 'pointer',
+            outline: 'none'
+          }}
         >
-          <option value="">Select Route</option>
+          <option value="">-- Choose --</option>
           <option value="302">302</option>
         </select>
       </div>
 
       <MapContainer
-        center={[-37.81, 144.96]}   // 初始默认
+        center={[-37.81, 144.96]}
         zoom={13}
         style={{ height: '100%', width: '100%' }}
       >
@@ -200,12 +217,10 @@ export default function WhereIsMyBus() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* 自动居中到用户位置 */}
         {currentPosition && (
           <RecenterMap position={currentPosition} />
         )}
 
-        {/* ====== 只有选中线路才显示 ====== */}
         {selectedRoute && (
           <>
             <Polyline positions={routeCoords} />
@@ -240,7 +255,6 @@ export default function WhereIsMyBus() {
           </>
         )}
 
-        {/* 用户位置永远显示 */}
         {currentPosition && (
           <Marker
             position={currentPosition}
