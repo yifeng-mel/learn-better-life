@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 
-// ====== 路线数据（目前 302） ======
+// ===== Route Data =====
 import {
   stops as stops302,
   lineString as line302,
@@ -12,7 +12,7 @@ import {
   testBuses as testBuses302
 } from '../data/route302'
 
-// ====== 动态加载 react-leaflet（SSR 安全） ======
+// ===== Dynamic Leaflet (SSR safe) =====
 const MapContainer = dynamic(
   () => import('react-leaflet').then(mod => mod.MapContainer),
   { ssr: false }
@@ -34,7 +34,6 @@ const Popup = dynamic(
   { ssr: false }
 )
 
-// ====== 自动居中组件 ======
 function RecenterMap({ position }) {
   const map = require('react-leaflet').useMap()
 
@@ -58,11 +57,52 @@ export default function WhereIsMyBus() {
   const [customIcon, setCustomIcon] = useState(null)
   const [busIcon, setBusIcon] = useState(null)
   const [myLocationIcon, setMyLocationIcon] = useState(null)
-
   const [currentPosition, setCurrentPosition] = useState(null)
 
   // ==============================
-  // 初始化 Leaflet Icon
+  // Inject global styles (NO CSS FILE NEEDED)
+  // ==============================
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.innerHTML = `
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        background: #fff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+    `
+    document.head.appendChild(style)
+
+    return () => {
+      document.head.removeChild(style)
+    }
+  }, [])
+
+  // ==============================
+  // iOS Safari 100vh Fix
+  // ==============================
+  useEffect(() => {
+    const setVH = () => {
+      document.documentElement.style.setProperty(
+        '--vh',
+        `${window.innerHeight}px`
+      )
+    }
+    setVH()
+    window.addEventListener('resize', setVH)
+    return () => window.removeEventListener('resize', setVH)
+  }, [])
+
+  // ==============================
+  // Leaflet Icons
   // ==============================
   useEffect(() => {
     import('leaflet').then((L) => {
@@ -92,7 +132,7 @@ export default function WhereIsMyBus() {
   }, [])
 
   // ==============================
-  // 获取用户当前位置
+  // Geolocation
   // ==============================
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -103,15 +143,12 @@ export default function WhereIsMyBus() {
           pos.coords.latitude,
           pos.coords.longitude
         ])
-      },
-      err => {
-        console.error('获取定位失败', err)
       }
     )
   }, [])
 
   // ==============================
-  // 选择线路后加载数据
+  // Load Route
   // ==============================
   useEffect(() => {
 
@@ -124,7 +161,6 @@ export default function WhereIsMyBus() {
     }
 
     if (selectedRoute === '302') {
-
       const converted = line302.coordinates.map(
         ([lng, lat]) => [lat, lng]
       )
@@ -138,7 +174,7 @@ export default function WhereIsMyBus() {
   }, [selectedRoute])
 
   // ==============================
-  // 模拟公交车移动
+  // Simulate Bus Movement
   // ==============================
   useEffect(() => {
 
@@ -161,28 +197,35 @@ export default function WhereIsMyBus() {
   if (!myLocationIcon) return null
 
   return (
-    <div style={{ height: '90vh', width: '100%', position: 'relative' }}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100dvh',
+        overflow: 'hidden'
+      }}
+    >
 
-      {/* ====== Enhanced Route Selector UI ====== */}
+      {/* Floating Route Selector */}
       <div style={{
         position: 'absolute',
-        top: 20,
+        top: 'calc(env(safe-area-inset-top, 0px) + 20px)',
         right: 20,
         zIndex: 1000,
-        backdropFilter: 'blur(12px)',
+        backdropFilter: 'blur(14px)',
         background: 'rgba(255,255,255,0.9)',
         padding: '14px 16px',
-        borderRadius: 14,
-        boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-        minWidth: 180,
+        borderRadius: 16,
+        boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
+        minWidth: 160,
         fontFamily: 'system-ui, sans-serif'
       }}>
         <div style={{
           fontSize: 13,
           fontWeight: 600,
           marginBottom: 8,
-          color: '#444',
-          letterSpacing: 0.5
+          color: '#444'
         }}>
           Select Route
         </div>
@@ -197,9 +240,7 @@ export default function WhereIsMyBus() {
             padding: '8px 10px',
             borderRadius: 10,
             border: '1px solid #ddd',
-            fontSize: 14,
-            cursor: 'pointer',
-            outline: 'none'
+            fontSize: 14
           }}
         >
           <option value="">-- Choose --</option>
