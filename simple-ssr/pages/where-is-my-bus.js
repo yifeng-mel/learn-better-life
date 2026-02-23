@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 
@@ -35,11 +35,14 @@ const Popup = dynamic(
 )
 
 function RecenterMap({ position }) {
-  const map = require('react-leaflet').useMap()
+  const { useMap } = require('react-leaflet')
+  const map = useMap()
+  const hasCentered = useRef(false)
 
   useEffect(() => {
-    if (position) {
+    if (position && !hasCentered.current) {
       map.setView(position, 15)
+      hasCentered.current = true
     }
   }, [position, map])
 
@@ -60,7 +63,7 @@ export default function WhereIsMyBus() {
   const [currentPosition, setCurrentPosition] = useState(null)
 
   // ==============================
-  // Inject global styles (NO CSS FILE NEEDED)
+  // Global Styles
   // ==============================
   useEffect(() => {
     const style = document.createElement('style')
@@ -70,35 +73,12 @@ export default function WhereIsMyBus() {
         padding: 0;
         height: 100%;
         overflow: hidden;
-        overscroll-behavior: none;
-        -webkit-tap-highlight-color: transparent;
         background: #fff;
       }
-
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
     `
     document.head.appendChild(style)
-
-    return () => {
-      document.head.removeChild(style)
-    }
-  }, [])
-
-  // ==============================
-  // iOS Safari 100vh Fix
-  // ==============================
-  useEffect(() => {
-    const setVH = () => {
-      document.documentElement.style.setProperty(
-        '--vh',
-        `${window.innerHeight}px`
-      )
-    }
-    setVH()
-    window.addEventListener('resize', setVH)
-    return () => window.removeEventListener('resize', setVH)
+    return () => document.head.removeChild(style)
   }, [])
 
   // ==============================
@@ -132,19 +112,27 @@ export default function WhereIsMyBus() {
   }, [])
 
   // ==============================
-  // Geolocation
+  // Geolocation (continuous update)
   // ==============================
   useEffect(() => {
     if (!navigator.geolocation) return
 
-    navigator.geolocation.getCurrentPosition(
-      pos => {
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
         setCurrentPosition([
           pos.coords.latitude,
           pos.coords.longitude
         ])
+      },
+      (err) => console.error(err),
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 5000
       }
     )
+
+    return () => navigator.geolocation.clearWatch(watchId)
   }, [])
 
   // ==============================
@@ -197,35 +185,30 @@ export default function WhereIsMyBus() {
   if (!myLocationIcon) return null
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        width: '100vw',
-        height: '100dvh',
-        overflow: 'hidden'
-      }}
-    >
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      width: '100vw',
+      height: '100dvh',
+      overflow: 'hidden'
+    }}>
 
-      {/* Floating Route Selector */}
+      {/* Route Selector */}
       <div style={{
         position: 'absolute',
-        top: 'calc(env(safe-area-inset-top, 0px) + 20px)',
+        top: 20,
         right: 20,
         zIndex: 1000,
-        backdropFilter: 'blur(14px)',
         background: 'rgba(255,255,255,0.9)',
         padding: '14px 16px',
         borderRadius: 16,
         boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
-        minWidth: 160,
-        fontFamily: 'system-ui, sans-serif'
+        minWidth: 160
       }}>
         <div style={{
           fontSize: 13,
           fontWeight: 600,
-          marginBottom: 8,
-          color: '#444'
+          marginBottom: 8
         }}>
           Select Route
         </div>
