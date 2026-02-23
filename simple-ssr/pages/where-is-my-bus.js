@@ -4,14 +4,6 @@ import React, { useEffect, useState, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import 'leaflet/dist/leaflet.css'
 
-// ===== Route Data =====
-import {
-  stops as stops302,
-  lineString as line302,
-  routeInfo as routeInfo302,
-  testBuses as testBuses302
-} from '../data/route302'
-
 // ===== Dynamic Leaflet (SSR safe) =====
 const MapContainer = dynamic(
   () => import('react-leaflet').then(mod => mod.MapContainer),
@@ -34,6 +26,9 @@ const Popup = dynamic(
   { ssr: false }
 )
 
+// ==============================
+// Only recenter ONCE
+// ==============================
 function RecenterMap({ position }) {
   const { useMap } = require('react-leaflet')
   const map = useMap()
@@ -51,34 +46,26 @@ function RecenterMap({ position }) {
 
 export default function WhereIsMyBus() {
 
+  const [routes, setRoutes] = useState([])
   const [selectedRoute, setSelectedRoute] = useState(null)
+
   const [routeCoords, setRouteCoords] = useState([])
   const [stops, setStops] = useState([])
-  const [routeInfo, setRouteInfo] = useState(null)
   const [buses, setBuses] = useState([])
 
   const [customIcon, setCustomIcon] = useState(null)
   const [busIcon, setBusIcon] = useState(null)
   const [myLocationIcon, setMyLocationIcon] = useState(null)
+
   const [currentPosition, setCurrentPosition] = useState(null)
 
   // ==============================
-  // Global Styles
+  // Load Routes ONCE
   // ==============================
   useEffect(() => {
-    const style = document.createElement('style')
-    style.innerHTML = `
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #fff;
-      }
-      * { box-sizing: border-box; }
-    `
-    document.head.appendChild(style)
-    return () => document.head.removeChild(style)
+    fetch('/api/routes')
+      .then(res => res.json())
+      .then(data => setRoutes(data))
   }, [])
 
   // ==============================
@@ -87,7 +74,6 @@ export default function WhereIsMyBus() {
   useEffect(() => {
     import('leaflet').then((L) => {
       window.L = L
-
       import('leaflet-rotatedmarker').then(() => {
 
         setCustomIcon(L.icon({
@@ -112,7 +98,7 @@ export default function WhereIsMyBus() {
   }, [])
 
   // ==============================
-  // Geolocation (continuous update)
+  // Geolocation (stable version)
   // ==============================
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -124,11 +110,12 @@ export default function WhereIsMyBus() {
           pos.coords.longitude
         ])
       },
-      (err) => console.error(err),
+      (err) => {
+        console.warn("Geolocation error:", err.message)
+      },
       {
         enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 5000
+        maximumAge: 10000
       }
     )
 
@@ -136,46 +123,46 @@ export default function WhereIsMyBus() {
   }, [])
 
   // ==============================
-  // Load Route
+  // Fetch Route Line + Stops
   // ==============================
   useEffect(() => {
-
     if (!selectedRoute) {
       setRouteCoords([])
       setStops([])
-      setRouteInfo(null)
-      setBuses([])
       return
     }
 
-    if (selectedRoute === '302') {
-      const converted = line302.coordinates.map(
-        ([lng, lat]) => [lat, lng]
-      )
+    fetch(`/api/routeLine/${selectedRoute}`)
+      .then(res => res.json())
+      .then(data => {
+        const converted = data.coordinates.map(
+          ([lng, lat]) => [lat, lng]
+        )
+        setRouteCoords(converted)
+      })
 
-      setRouteCoords(converted)
-      setStops(stops302)
-      setRouteInfo(routeInfo302)
-      setBuses(testBuses302)
-    }
+    fetch(`/api/routeBusStops/${selectedRoute}`)
+      .then(res => res.json())
+      .then(data => setStops(data))
 
   }, [selectedRoute])
 
   // ==============================
-  // Simulate Bus Movement
+  // Fetch Bus Positions (every 2s)
   // ==============================
   useEffect(() => {
-
     if (!selectedRoute) return
 
+    const fetchBusPositions = () => {
+      fetch(`/api/busPositions/${selectedRoute}`)
+        .then(res => res.json())
+        .then(data => setBuses(data))
+    }
+
+    fetchBusPositions()
+
     const interval = setInterval(() => {
-      setBuses(prev =>
-        prev.map(bus => ({
-          ...bus,
-          lat: bus.lat + (Math.random() - 0.5) * 0.001,
-          lng: bus.lng + (Math.random() - 0.5) * 0.001,
-        }))
-      )
+      fetchBusPositions()
     }, 2000)
 
     return () => clearInterval(interval)
@@ -190,7 +177,8 @@ export default function WhereIsMyBus() {
       inset: 0,
       width: '100vw',
       height: '100dvh',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
 
       {/* Route Selector */}
@@ -199,7 +187,7 @@ export default function WhereIsMyBus() {
         top: 20,
         right: 20,
         zIndex: 1000,
-        background: 'rgba(255,255,255,0.9)',
+        background: 'rgba(255,255,255,0.92)',
         padding: '14px 16px',
         borderRadius: 16,
         boxShadow: '0 12px 30px rgba(0,0,0,0.18)',
@@ -215,19 +203,22 @@ export default function WhereIsMyBus() {
 
         <select
           value={selectedRoute || ''}
-          onChange={e =>
-            setSelectedRoute(e.target.value || null)
-          }
+          onChange={e => setSelectedRoute(e.target.value || null)}
           style={{
             width: '100%',
             padding: '8px 10px',
             borderRadius: 10,
             border: '1px solid #ddd',
-            fontSize: 14
+            fontSize: 14,
+            fontFamily: 'inherit'
           }}
         >
           <option value="">-- Choose --</option>
-          <option value="302">302</option>
+          {routes.map(route => (
+            <option key={route} value={route}>
+              {route}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -255,9 +246,7 @@ export default function WhereIsMyBus() {
                 position={[stop.stop_lat, stop.stop_lon]}
                 icon={customIcon}
               >
-                <Popup>
-                  <b>{routeInfo?.routeShortName}</b>
-                  <br />
+                <Popup offset={[0, -30]}>
                   {stop.stop_name}
                 </Popup>
               </Marker>
@@ -271,7 +260,7 @@ export default function WhereIsMyBus() {
                 rotationAngle={bus.bearing}
                 rotationOrigin="center"
               >
-                <Popup>
+                <Popup offset={[0, -20]}>
                   Bus {bus.id}
                 </Popup>
               </Marker>
@@ -284,7 +273,9 @@ export default function WhereIsMyBus() {
             position={currentPosition}
             icon={myLocationIcon}
           >
-            <Popup>你的位置</Popup>
+            <Popup offset={[0, -20]}>
+              你的位置
+            </Popup>
           </Marker>
         )}
 
