@@ -153,19 +153,35 @@ export default function WhereIsMyBus() {
   useEffect(() => {
     if (!selectedRoute) return
 
-    const fetchBusPositions = () => {
-      fetch(`/api/busPositions/${selectedRoute}`)
-        .then(res => res.json())
-        .then(data => setBuses(data))
+    let isActive = true
+    let timeoutId
+
+    const fetchBusPositions = async () => {
+      try {
+        const res = await fetch(`/api/busPositions/${selectedRoute}`)
+        const data = await res.json()
+
+        if (!isActive) return
+
+        setBuses(data)
+
+        // 等 2 秒再发下一次
+        timeoutId = setTimeout(fetchBusPositions, 2000)
+
+      } catch (err) {
+        console.error(err)
+
+        // 出错也可以继续轮询
+        timeoutId = setTimeout(fetchBusPositions, 2000)
+      }
     }
 
     fetchBusPositions()
 
-    const interval = setInterval(() => {
-      fetchBusPositions()
-    }, 2000)
-
-    return () => clearInterval(interval)
+    return () => {
+      isActive = false
+      clearTimeout(timeoutId)
+    }
 
   }, [selectedRoute])
 
